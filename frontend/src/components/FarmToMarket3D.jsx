@@ -1,415 +1,475 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
+// Lightweight hook to detect prefers-reduced-motion
+function usePrefersReducedMotion() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+    const handler = (e) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+  return prefersReducedMotion;
+}
+
+// 1. Farmer Node (Scaled up to 1.3)
+function FarmerNode({ position, reducedMotion }) {
+  const groupRef = useRef();
+
+  useFrame((state) => {
+    if (reducedMotion) return;
+    const time = state.clock.getElapsedTime();
+    if (groupRef.current) {
+      // Slower, more gentle float
+      groupRef.current.position.y = position[1] + Math.sin(time * 0.8) * 0.03;
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={position} scale={1.3}>
+      {/* Base Platform */}
+      <mesh receiveShadow position={[0, -0.05, 0]}>
+        <cylinderGeometry args={[1.6, 1.7, 0.2, 24]} />
+        <meshStandardMaterial color="#dcfce7" roughness={0.6} metalness={0.1} />
+      </mesh>
+
+      {/* Soil base for crops (Expanded slightly to act as the primary ground) */}
+      <mesh receiveShadow position={[-0.2, 0.06, 0.2]} rotation={[0, 0.3, 0]}>
+        <boxGeometry args={[1.9, 0.04, 1.5]} />
+        <meshStandardMaterial color="#78350f" roughness={1} />
+      </mesh>
+
+      {/* Stylized Indian Farmer */}
+      <group position={[0.4, 0.45, -0.2]} rotation={[0, -0.3, 0]}>
+        {/* Legs / Dhoti */}
+        <mesh castShadow position={[0, -0.15, 0]}>
+          <cylinderGeometry args={[0.22, 0.28, 0.3, 8]} />
+          <meshStandardMaterial color="#fef3c7" roughness={0.9} />
+        </mesh>
+        {/* Torso */}
+        <mesh castShadow position={[0, 0.15, 0]}>
+          <cylinderGeometry args={[0.2, 0.22, 0.4, 8]} />
+          <meshStandardMaterial color="#d97706" roughness={0.7} />
+        </mesh>
+        {/* Head */}
+        <mesh castShadow position={[0, 0.45, 0]}>
+          <sphereGeometry args={[0.15, 16, 16]} />
+          <meshStandardMaterial color="#fcd34d" roughness={0.6} />
+        </mesh>
+        {/* Turban/Safa */}
+        <mesh castShadow position={[0, 0.58, 0]} rotation={[0.2, 0, 0.1]}>
+          <cylinderGeometry args={[0.17, 0.17, 0.15, 8]} />
+          <meshStandardMaterial color="#ef4444" roughness={0.9} />
+        </mesh>
+        {/* Tool (Staff) */}
+        <mesh castShadow position={[-0.3, 0.1, 0.2]} rotation={[0, 0, -0.2]}>
+          <cylinderGeometry args={[0.02, 0.02, 0.9, 8]} />
+          <meshStandardMaterial color="#8b5cf6" roughness={0.8} />
+        </mesh>
+      </group>
+
+      {/* Field / Crops in Rows */}
+      <group position={[-0.2, 0.1, 0.2]} rotation={[0, 0.3, 0]}>
+        {[-0.8, -0.2, 0.4, 1.0].map((x, rowIdx) => (
+          [-0.6, 0, 0.6].map((z, colIdx) => (
+            <mesh castShadow position={[x, 0.1, z]} key={`${rowIdx}-${colIdx}`}>
+              <coneGeometry args={[0.08, 0.3, 5]} />
+              <meshStandardMaterial color="#22c55e" roughness={0.6} />
+            </mesh>
+          ))
+        ))}
+      </group>
+    </group>
+  );
+}
+
+// 2. Market Node (Scaled down to 0.9)
+function MarketNode({ position, reducedMotion }) {
+  const groupRef = useRef();
+  const ringsRef = useRef();
+
+  useFrame((state) => {
+    if (reducedMotion) return;
+    const time = state.clock.getElapsedTime();
+    if (groupRef.current) {
+      groupRef.current.position.y = position[1] + Math.sin(time * 0.8 + 1) * 0.03;
+    }
+    if (ringsRef.current) {
+      ringsRef.current.rotation.y = time * 0.2;
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={position} scale={0.9}>
+      {/* Base Platform */}
+      <mesh receiveShadow position={[0, -0.05, 0]}>
+        <cylinderGeometry args={[1.6, 1.7, 0.2, 24]} />
+        <meshStandardMaterial color="#fef3c7" roughness={0.5} metalness={0.1} />
+      </mesh>
+
+      {/* Mandi Building */}
+      <group position={[0.2, 0, -0.2]}>
+        <mesh castShadow position={[0, 0.45, 0]}>
+          <cylinderGeometry args={[0.8, 0.9, 0.9, 8]} />
+          <meshStandardMaterial color="#b45309" roughness={0.5} />
+        </mesh>
+        <mesh castShadow position={[0, 0.9, 0]}>
+          <sphereGeometry args={[0.65, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color="#f59e0b" roughness={0.3} metalness={0.2} />
+        </mesh>
+      </group>
+
+      {/* Market Data Indicator Rings */}
+      <group ref={ringsRef} position={[0.2, 1.6, -0.2]}>
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.8, 0.85, 32]} />
+          <meshBasicMaterial color="#fcd34d" side={THREE.DoubleSide} transparent opacity={0.5} />
+        </mesh>
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.95, 0.98, 32, 1, 0, Math.PI * 1.5]} />
+          <meshBasicMaterial color="#fbbf24" side={THREE.DoubleSide} transparent opacity={0.6} />
+        </mesh>
+      </group>
+
+      {/* Produce Area with Awning */}
+      <group position={[-0.6, 0, 0.6]} rotation={[0, Math.PI/6, 0]}>
+        {/* Awning */}
+        <mesh castShadow position={[0, 0.7, 0]} rotation={[0.2, 0, 0]}>
+          <boxGeometry args={[1.4, 0.04, 1]} />
+          <meshStandardMaterial color="#fbbf24" roughness={0.7} />
+        </mesh>
+        {/* Awning Posts */}
+        <mesh castShadow position={[-0.6, 0.35, -0.4]}>
+          <cylinderGeometry args={[0.03, 0.03, 0.7]} />
+          <meshStandardMaterial color="#78350f" />
+        </mesh>
+        <mesh castShadow position={[0.6, 0.35, -0.4]}>
+          <cylinderGeometry args={[0.03, 0.03, 0.7]} />
+          <meshStandardMaterial color="#78350f" />
+        </mesh>
+        <mesh castShadow position={[-0.6, 0.3, 0.4]}>
+          <cylinderGeometry args={[0.03, 0.03, 0.6]} />
+          <meshStandardMaterial color="#78350f" />
+        </mesh>
+        <mesh castShadow position={[0.6, 0.3, 0.4]}>
+          <cylinderGeometry args={[0.03, 0.03, 0.6]} />
+          <meshStandardMaterial color="#78350f" />
+        </mesh>
+
+        {/* Stacked Crates */}
+        <mesh castShadow position={[-0.3, 0.15, 0.2]}>
+          <boxGeometry args={[0.35, 0.3, 0.35]} />
+          <meshStandardMaterial color="#a3e635" />
+        </mesh>
+        <mesh castShadow position={[0.2, 0.15, 0.1]} rotation={[0, -0.2, 0]}>
+          <boxGeometry args={[0.35, 0.3, 0.35]} />
+          <meshStandardMaterial color="#84cc16" />
+        </mesh>
+        <mesh castShadow position={[-0.1, 0.45, 0.15]} rotation={[0, 0.1, 0]}>
+          <boxGeometry args={[0.35, 0.3, 0.35]} />
+          <meshStandardMaterial color="#bef264" />
+        </mesh>
+        <mesh castShadow position={[-0.4, 0.15, -0.2]} rotation={[0, 0.3, 0]}>
+          <boxGeometry args={[0.35, 0.3, 0.35]} />
+          <meshStandardMaterial color="#fcd34d" />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+// 3. AI Intelligence Node (Scaled down to 0.8)
+function AINode({ position, reducedMotion }) {
+  const groupRef = useRef();
+  const ringRef = useRef();
+
+  useFrame((state) => {
+    if (reducedMotion) return;
+    const time = state.clock.getElapsedTime();
+    if (groupRef.current) {
+      groupRef.current.position.y = position[1] + Math.sin(time * 1.0) * 0.04;
+    }
+    if (ringRef.current) {
+      ringRef.current.rotation.y = time * 0.4;
+      ringRef.current.rotation.x = Math.sin(time * 0.4) * 0.2;
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={position} scale={0.8}>
+      {/* AI Core */}
+      <mesh castShadow>
+        <octahedronGeometry args={[0.25, 0]} />
+        <meshStandardMaterial color="#a855f7" metalness={0.4} roughness={0.3} emissive="#7e22ce" emissiveIntensity={0.6} />
+      </mesh>
+
+      {/* Analytical Ring */}
+      <mesh ref={ringRef}>
+        <torusGeometry args={[0.4, 0.02, 8, 32]} />
+        <meshStandardMaterial color="#d8b4fe" metalness={0.8} roughness={0.1} transparent opacity={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+// 4. Buyer Node (Scaled down to 0.8)
+function BuyerNode({ position, reducedMotion }) {
+  const groupRef = useRef();
+
+  useFrame((state) => {
+    if (reducedMotion) return;
+    const time = state.clock.getElapsedTime();
+    if (groupRef.current) {
+      groupRef.current.position.y = position[1] + Math.sin(time * 0.8 + 2) * 0.03;
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={position} scale={0.8}>
+      {/* Base Platform */}
+      <mesh receiveShadow position={[0, -0.05, 0]}>
+        <cylinderGeometry args={[1.6, 1.7, 0.2, 24]} />
+        <meshStandardMaterial color="#e0f2fe" roughness={0.4} metalness={0.1} />
+      </mesh>
+
+      {/* Corporate Building */}
+      <group position={[0.2, 0, -0.2]}>
+        <mesh castShadow position={[0, 0.8, 0]}>
+          <boxGeometry args={[1.1, 1.6, 1.1]} />
+          <meshStandardMaterial color="#0369a1" roughness={0.2} metalness={0.6} />
+        </mesh>
+        {/* Simple Windows (Stylized) */}
+        <mesh position={[0, 1.1, 0.56]}>
+          <boxGeometry args={[0.8, 0.3, 0.02]} />
+          <meshStandardMaterial color="#38bdf8" roughness={0.1} metalness={0.8} />
+        </mesh>
+        <mesh position={[0, 0.6, 0.56]}>
+          <boxGeometry args={[0.8, 0.3, 0.02]} />
+          <meshStandardMaterial color="#38bdf8" roughness={0.1} metalness={0.8} />
+        </mesh>
+      </group>
+
+      {/* Loading Dock / Procurement Area */}
+      <group position={[-0.6, 0, 0.5]}>
+        <mesh castShadow position={[0, 0.2, 0]}>
+          <boxGeometry args={[0.8, 0.4, 0.8]} />
+          <meshStandardMaterial color="#0284c7" roughness={0.4} metalness={0.3} />
+        </mesh>
+        {/* Ramp */}
+        <mesh castShadow position={[-0.55, 0.1, 0]} rotation={[0, 0, 0.4]}>
+          <boxGeometry args={[0.4, 0.05, 0.6]} />
+          <meshStandardMaterial color="#0c4a6e" roughness={0.7} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+// 5. Data Flow Curve
+function DataFlow({ start, end, color, reducedMotion, offsetTime = 0, heightOffset = 1.2 }) {
+  const curve = useMemo(() => {
+    return new THREE.CubicBezierCurve3(
+      new THREE.Vector3(...start),
+      new THREE.Vector3(start[0] + (end[0] - start[0]) * 0.33, Math.max(start[1], end[1]) + heightOffset, start[2] + 0.4),
+      new THREE.Vector3(start[0] + (end[0] - start[0]) * 0.66, Math.max(start[1], end[1]) + heightOffset, end[2] - 0.4),
+      new THREE.Vector3(...end)
+    );
+  }, [start, end, heightOffset]);
+
+  const particleRef = useRef();
+
+  useFrame((state) => {
+    if (reducedMotion) return;
+    const time = state.clock.getElapsedTime();
+    const t = ((time * 0.25) + offsetTime) % 1; // Slower flow
+    const point = curve.getPoint(t);
+    if (particleRef.current) {
+      particleRef.current.position.copy(point);
+      // Subtle scale pulse
+      const scale = 1 + Math.sin(time * 5) * 0.2;
+      particleRef.current.scale.set(scale, scale, scale);
+    }
+  });
+
+  return (
+    <group>
+      <mesh>
+        <tubeGeometry args={[curve, 32, 0.02, 8, false]} />
+        <meshBasicMaterial color={color} transparent opacity={0.2} />
+      </mesh>
+
+      {!reducedMotion && (
+        <mesh ref={particleRef}>
+          <sphereGeometry args={[0.06, 12, 12]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.5} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+function BackgroundDust() {
+  const points = useMemo(() => {
+    const p = new Float32Array(30 * 3);
+    for (let i = 0; i < 30 * 3; i+=3) {
+      p[i] = (Math.random() - 0.5) * 14;
+      p[i+1] = Math.random() * 6 + 0.5;
+      p[i+2] = (Math.random() - 0.5) * 10;
+    }
+    return p;
+  }, []);
+
+  const ref = useRef();
+  useFrame((state) => {
+    if (ref.current) {
+      ref.current.rotation.y = state.clock.getElapsedTime() * 0.02; // Slower rotation
+    }
+  });
+
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={points.length / 3}
+          array={points}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <pointsMaterial color="#10b981" size={0.06} transparent opacity={0.3} />
+    </points>
+  );
+}
+
+function Scene() {
+  const reducedMotion = usePrefersReducedMotion();
+
+  // Very Gentle Mouse Parallax
+  useFrame((state) => {
+    if (reducedMotion) return;
+    // Adapt camera framing based on viewport aspect ratio
+    const isMobile = state.viewport.aspect < 1;
+    // We want the farmer to stay left on desktop, centered on mobile.
+    // The scene center of mass is shifted due to the diagonal layout.
+    // Farmer is at [-2.5, 0.15, 1.5]
+    const baseCamX = isMobile ? -0.5 : -2.0;
+    const baseCamY = isMobile ? 5.0 : 4.0;
+    const lookAtX = isMobile ? -0.5 : -1.0;
+
+    const targetX = (state.pointer.x * 0.4);
+    const targetY = (state.pointer.y * 0.15);
+    state.camera.position.x += (baseCamX + targetX - state.camera.position.x) * 0.03;
+    state.camera.position.y += (baseCamY + targetY - state.camera.position.y) * 0.03;
+
+    // Smoothly adjust z position for zoom
+    const targetZ = isMobile ? 12 : 10;
+    state.camera.position.z += (targetZ - state.camera.position.z) * 0.03;
+
+    state.camera.lookAt(lookAtX, 0, 0);
+  });
+
+  return (
+    <>
+      {/* Warmer, softer lighting setup */}
+      <ambientLight intensity={0.9} color="#fffbeb" />
+      <directionalLight
+        position={[8, 12, 5]}
+        intensity={1.1}
+        color="#fef3c7"
+        castShadow
+        shadow-mapSize={[1024, 1024]}
+        shadow-bias={-0.0001}
+      />
+      {/* Soft fill lights */}
+      <pointLight position={[-4, 3, 2]} color="#34d399" intensity={0.6} distance={10} />
+      <pointLight position={[0, 3, 2]} color="#fbbf24" intensity={0.6} distance={10} />
+      <pointLight position={[4, 3, 2]} color="#38bdf8" intensity={0.6} distance={10} />
+      {/* AI node subtle purple fill light */}
+      <pointLight position={[1.5, 3, 0]} color="#a855f7" intensity={0.5} distance={8} />
+
+      {/* REPLACED: Giant Ground Disc was removed. Platforms now sit independently. */}
+
+      <FarmerNode position={[-2.5, 0.15, 1.5]} reducedMotion={reducedMotion} />
+      <MarketNode position={[0.5, 0.15, -0.5]} reducedMotion={reducedMotion} />
+      <AINode position={[1.8, 1.8, -1.0]} reducedMotion={reducedMotion} />
+      <BuyerNode position={[3.5, 0.15, -2.0]} reducedMotion={reducedMotion} />
+
+      {/* Flow: Farmer -> Market */}
+      <DataFlow start={[-2.5, 0.6, 1.5]} end={[0.5, 1.0, -0.5]} color="#10b981" reducedMotion={reducedMotion} offsetTime={0} heightOffset={1.2} />
+
+      {/* Flow: Market -> AI Intelligence */}
+      <DataFlow start={[0.5, 1.0, -0.5]} end={[1.8, 1.8, -1.0]} color="#f59e0b" reducedMotion={reducedMotion} offsetTime={0.3} heightOffset={0.5} />
+
+      {/* Flow: AI Intelligence -> Buyer Match */}
+      <DataFlow start={[1.8, 1.8, -1.0]} end={[3.5, 0.8, -2.0]} color="#a855f7" reducedMotion={reducedMotion} offsetTime={0.7} heightOffset={0.8} />
+
+      {!reducedMotion && <BackgroundDust />}
+    </>
+  );
+}
+
+// Fallback detection
+const isWebGLAvailable = () => {
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+  } catch (e) {
+    return false;
+  }
+};
+
 export default function FarmToMarket3D() {
-  const containerRef = useRef(null);
   const [webglSupported, setWebglSupported] = useState(true);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    // WebGL support check
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      if (!gl) {
-        setWebglSupported(false);
-        return;
-      }
-    } catch (e) {
-      setWebglSupported(false);
-      return;
-    }
-
-    const width = container.clientWidth || 500;
-    const height = container.clientHeight || 400;
-
-    // Scene, Camera, Renderer
-    const scene = new THREE.Scene();
-    
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, 5, 14); // Adjusted for full-width hero background
-    camera.lookAt(0, 0, 0);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-    container.appendChild(renderer.domElement);
-
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
-    scene.add(ambientLight);
-
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    dirLight.position.set(8, 12, 8);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
-    scene.add(dirLight);
-
-    const emeraldLight = new THREE.PointLight(0x059669, 1.5, 10);
-    emeraldLight.position.set(-3.8, 2, 0);
-    scene.add(emeraldLight);
-
-    const amberLight = new THREE.PointLight(0xd97706, 1.5, 10);
-    amberLight.position.set(0, 2, 0);
-    scene.add(amberLight);
-
-    const blueLight = new THREE.PointLight(0x0284c7, 1.5, 10);
-    blueLight.position.set(3.8, 2, 0);
-    scene.add(blueLight);
-
-    // Main Group
-    const mainGroup = new THREE.Group();
-    scene.add(mainGroup);
-
-    // Floating Ground Disc
-    const groundGeo = new THREE.CylinderGeometry(6, 6.2, 0.4, 32);
-    const groundMat = new THREE.MeshStandardMaterial({ 
-      color: 0xf5f5f4, 
-      roughness: 0.8, 
-      metalness: 0.1 
-    });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.position.y = -0.2;
-    ground.receiveShadow = true;
-    mainGroup.add(ground);
-
-    // Sub-platform circles (Farm, Market, Buyer)
-    const createPlatform = (x, z, colorHex) => {
-      const geo = new THREE.CylinderGeometry(1.6, 1.7, 0.2, 24);
-      const mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.4, metalness: 0.2 });
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(x, 0.05, z);
-      mesh.receiveShadow = true;
-      mainGroup.add(mesh);
-      return mesh;
-    };
-
-    createPlatform(-3.8, 0, 0xdcfce7); // Farm platform (Light Green)
-    createPlatform(0, 0, 0xfef3c7);    // Market platform (Light Gold)
-    createPlatform(3.8, 0, 0xe0f2fe);   // Buyer platform (Light Blue)
-
-    // 1. FARM NODE (Left: -3.8, 0)
-    const farmGroup = new THREE.Group();
-    farmGroup.position.set(-3.8, 0.15, 0);
-
-    // Small Farm Barn/House
-    const barnGeo = new THREE.BoxGeometry(1.0, 0.8, 0.9);
-    const barnMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.5 });
-    const barn = new THREE.Mesh(barnGeo, barnMat);
-    barn.position.y = 0.4;
-    barn.castShadow = true;
-    farmGroup.add(barn);
-
-    // Roof
-    const roofGeo = new THREE.ConeGeometry(0.85, 0.5, 4);
-    roofGeo.rotateY(Math.PI / 4);
-    const roofMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.4 });
-    const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.position.y = 1.05;
-    roof.castShadow = true;
-    farmGroup.add(roof);
-
-    // Low-poly crops
-    for (let i = 0; i < 5; i++) {
-      const angle = (i / 5) * Math.PI * 2;
-      const cropRadius = 1.0;
-      const cx = Math.cos(angle) * cropRadius;
-      const cz = Math.sin(angle) * cropRadius;
-
-      const stemGeo = new THREE.ConeGeometry(0.12, 0.45, 5);
-      const stemMat = new THREE.MeshStandardMaterial({ color: 0x22c55e });
-      const stem = new THREE.Mesh(stemGeo, stemMat);
-      stem.position.set(cx, 0.22, cz);
-      stem.castShadow = true;
-      farmGroup.add(stem);
-    }
-    mainGroup.add(farmGroup);
-
-    // 2. MARKET NODE (Center: 0, 0)
-    const marketGroup = new THREE.Group();
-    marketGroup.position.set(0, 0.15, 0);
-
-    // Mandi Hub Building
-    const hubGeo = new THREE.CylinderGeometry(0.9, 1.1, 0.9, 8);
-    const hubMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.4, metalness: 0.3 });
-    const hub = new THREE.Mesh(hubGeo, hubMat);
-    hub.position.y = 0.45;
-    hub.castShadow = true;
-    marketGroup.add(hub);
-
-    // Dome Roof
-    const domeGeo = new THREE.SphereGeometry(0.7, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2);
-    const domeMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.2, metalness: 0.5 });
-    const dome = new THREE.Mesh(domeGeo, domeMat);
-    dome.position.y = 0.9;
-    marketGroup.add(dome);
-
-    // Market Node Beacon Pillar
-    const beaconGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.8, 8);
-    const beaconMat = new THREE.MeshBasicMaterial({ color: 0xd97706 });
-    const beacon = new THREE.Mesh(beaconGeo, beaconMat);
-    beacon.position.y = 1.5;
-    marketGroup.add(beacon);
-
-    const beaconOrbGeo = new THREE.SphereGeometry(0.2, 16, 16);
-    const beaconOrbMat = new THREE.MeshStandardMaterial({ 
-      color: 0xf59e0b, 
-      emissive: 0xd97706, 
-      emissiveIntensity: 0.8,
-      roughness: 0.1
-    });
-    const beaconOrb = new THREE.Mesh(beaconOrbGeo, beaconOrbMat);
-    beaconOrb.position.y = 2.4;
-    marketGroup.add(beaconOrb);
-
-    mainGroup.add(marketGroup);
-
-    // 3. BUYER NODE (Right: 3.8, 0)
-    const buyerGroup = new THREE.Group();
-    buyerGroup.position.set(3.8, 0.15, 0);
-
-    // Corporate / Warehouse Building
-    const bldg1Geo = new THREE.BoxGeometry(0.9, 1.4, 0.9);
-    const bldg1Mat = new THREE.MeshStandardMaterial({ color: 0x0369a1, roughness: 0.3, metalness: 0.4 });
-    const bldg1 = new THREE.Mesh(bldg1Geo, bldg1Mat);
-    bldg1.position.y = 0.7;
-    bldg1.castShadow = true;
-    buyerGroup.add(bldg1);
-
-    const bldg2Geo = new THREE.BoxGeometry(0.7, 0.9, 0.7);
-    const bldg2Mat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.2, metalness: 0.5 });
-    const bldg2 = new THREE.Mesh(bldg2Geo, bldg2Mat);
-    bldg2.position.set(0.5, 0.45, 0.4);
-    bldg2.castShadow = true;
-    buyerGroup.add(bldg2);
-
-    mainGroup.add(buyerGroup);
-
-    // CONNECTING PIPELINES / FLOW CURVES
-    // Curve 1: Farm (-3.8, 0.8, 0) -> Market (0, 1.2, 0)
-    const curve1 = new THREE.CubicBezierCurve3(
-      new THREE.Vector3(-3.8, 0.8, 0),
-      new THREE.Vector3(-2.2, 2.5, 0.8),
-      new THREE.Vector3(-1.0, 2.2, 0.4),
-      new THREE.Vector3(0, 1.2, 0)
-    );
-
-    const tubeGeo1 = new THREE.TubeGeometry(curve1, 32, 0.04, 8, false);
-    const tubeMat1 = new THREE.MeshBasicMaterial({ color: 0x16a34a, transparent: true, opacity: 0.6 });
-    const tube1 = new THREE.Mesh(tubeGeo1, tubeMat1);
-    mainGroup.add(tube1);
-
-    // Curve 2: Market (0, 1.2, 0) -> Buyer (3.8, 1.0, 0)
-    const curve2 = new THREE.CubicBezierCurve3(
-      new THREE.Vector3(0, 1.2, 0),
-      new THREE.Vector3(1.0, 2.2, -0.4),
-      new THREE.Vector3(2.2, 2.5, -0.8),
-      new THREE.Vector3(3.8, 1.0, 0)
-    );
-
-    const tubeGeo2 = new THREE.TubeGeometry(curve2, 32, 0.04, 8, false);
-    const tubeMat2 = new THREE.MeshBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.6 });
-    const tube2 = new THREE.Mesh(tubeGeo2, tubeMat2);
-    mainGroup.add(tube2);
-
-    // Flowing Data Particles
-    const particleGeo = new THREE.SphereGeometry(0.12, 12, 12);
-    const particleMat1 = new THREE.MeshStandardMaterial({ 
-      color: 0x22c55e, 
-      emissive: 0x16a34a, 
-      emissiveIntensity: 1 
-    });
-    const particleMat2 = new THREE.MeshStandardMaterial({ 
-      color: 0x38bdf8, 
-      emissive: 0x0284c7, 
-      emissiveIntensity: 1 
-    });
-
-    const flowMesh1 = new THREE.Mesh(particleGeo, particleMat1);
-    const flowMesh2 = new THREE.Mesh(particleGeo, particleMat2);
-    mainGroup.add(flowMesh1);
-    mainGroup.add(flowMesh2);
-
-    // Floating Background Dust Particles
-    const dustCount = 40;
-    const dustGeo = new THREE.BufferGeometry();
-    const dustPos = new Float32Array(dustCount * 3);
-
-    for (let i = 0; i < dustCount * 3; i += 3) {
-      dustPos[i] = (Math.random() - 0.5) * 14;
-      dustPos[i + 1] = Math.random() * 6 + 0.5;
-      dustPos[i + 2] = (Math.random() - 0.5) * 10;
-    }
-
-    dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-    const dustMat = new THREE.PointsMaterial({
-      color: 0x059669,
-      size: 0.08,
-      transparent: true,
-      opacity: 0.4
-    });
-    const dustPoints = new THREE.Points(dustGeo, dustMat);
-    mainGroup.add(dustPoints);
-
-    // Mouse Parallax Interaction
-    let mouseX = 0;
-    let mouseY = 0;
-    let targetRotationX = 0;
-    let targetRotationY = 0;
-
-    const handleMouseMove = (e) => {
-      const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      mouseX = (x / rect.width - 0.5) * 2;
-      mouseY = (y / rect.height - 0.5) * 2;
-    };
-
-    container.addEventListener('mousemove', handleMouseMove);
-
-    // Resize Handler
-    const handleResize = () => {
-      if (!container) return;
-      const newWidth = container.clientWidth || 500;
-      const newHeight = container.clientHeight || 400;
-      camera.aspect = newWidth / newHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(newWidth, newHeight);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    // Animation Loop
-    let animId;
-    let clock = new THREE.Clock();
-
-    const animate = () => {
-      animId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
-
-      // Smooth camera / group rotation based on mouse
-      targetRotationY = mouseX * 0.25;
-      targetRotationX = mouseY * 0.15;
-
-      mainGroup.rotation.y += (targetRotationY - mainGroup.rotation.y) * 0.05;
-      mainGroup.rotation.x += (targetRotationX - mainGroup.rotation.x) * 0.05;
-
-      // Gentle floating animation for nodes
-      farmGroup.position.y = 0.15 + Math.sin(elapsedTime * 1.5) * 0.05;
-      marketGroup.position.y = 0.15 + Math.sin(elapsedTime * 1.5 + 1) * 0.05;
-      buyerGroup.position.y = 0.15 + Math.sin(elapsedTime * 1.5 + 2) * 0.05;
-
-      // Beacon orb float and pulse
-      beaconOrb.position.y = 2.4 + Math.sin(elapsedTime * 3) * 0.08;
-      beaconOrbMat.emissiveIntensity = 0.5 + Math.sin(elapsedTime * 4) * 0.3;
-
-      // Crop slight movement
-      cropRadiusPulse(farmGroup, elapsedTime);
-
-      // Data Flow along Bezier Curves
-      const t1 = (elapsedTime * 0.35) % 1;
-      const point1 = curve1.getPoint(t1);
-      flowMesh1.position.copy(point1);
-
-      const t2 = (elapsedTime * 0.35 + 0.5) % 1;
-      const point2 = curve2.getPoint(t2);
-      flowMesh2.position.copy(point2);
-
-      // Rotate background dust
-      dustPoints.rotation.y = elapsedTime * 0.03;
-
-      renderer.render(scene, camera);
-    };
-
-    function cropRadiusPulse(group, time) {
-      group.children.forEach((child, idx) => {
-        if (idx > 1) {
-          child.rotation.z = Math.sin(time * 2 + idx) * 0.05;
-        }
-      });
-    }
-
-    animate();
-
-    // Cleanup
-    return () => {
-      cancelAnimationFrame(animId);
-      container.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('resize', handleResize);
-      if (container.contains(renderer.domElement)) {
-        container.removeChild(renderer.domElement);
-      }
-      renderer.dispose();
-      groundGeo.dispose();
-      groundMat.dispose();
-    };
+    setWebglSupported(isWebGLAvailable());
   }, []);
+
+  if (!webglSupported) {
+    return (
+      <div className="w-full h-full p-6 flex flex-col justify-end items-center text-center pb-20">
+        <div className="text-xs font-semibold uppercase tracking-wider text-agrigreen-500 mb-6">
+          AgriMitra Value Chain
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 w-full max-w-3xl">
+          <div className="bg-surface-card/80 backdrop-blur-md p-3 rounded-xl border border-agrigreen-500/20 flex flex-col items-center shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-agrigreen-500/20 text-agrigreen-500 flex items-center justify-center font-bold text-xs mb-2">🌱</div>
+            <span className="text-xs font-bold text-agrigreen-700">Farmer</span>
+            <span className="text-[9px] text-text-secondary mt-1">Produce</span>
+          </div>
+          <div className="bg-surface-card/80 backdrop-blur-md p-3 rounded-xl border border-amber-100 flex flex-col items-center shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-xs mb-2">🏛️</div>
+            <span className="text-xs font-bold text-amber-800">Market Data</span>
+            <span className="text-[9px] text-text-secondary mt-1">Market Data</span>
+          </div>
+          <div className="bg-surface-card/80 backdrop-blur-md p-3 rounded-xl border border-purple-100 flex flex-col items-center shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-xs mb-2">✨</div>
+            <span className="text-xs font-bold text-purple-800">AI Insight</span>
+            <span className="text-[9px] text-text-secondary mt-1">Smart Decision</span>
+          </div>
+          <div className="bg-surface-card/80 backdrop-blur-md p-3 rounded-xl border border-sky-100 flex flex-col items-center shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-xs mb-2">🏢</div>
+            <span className="text-xs font-bold text-sky-800">Buyer Match</span>
+            <span className="text-[9px] text-text-secondary mt-1">Direct Connection</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
-      
-      {/* Three.js Canvas Container */}
-      {webglSupported ? (
-        <div ref={containerRef} className="w-full h-full" />
-      ) : (
-        /* Mobile / No-WebGL 2D Fallback Visual */
-        <div className="w-full h-full p-6 flex flex-col justify-end items-center text-center pb-20">
-          <div className="text-xs font-semibold uppercase tracking-wider text-agrigreen-500 mb-6">
-            AgriMitra Value Chain
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-2xl">
-            <div className="bg-surface-card/80 backdrop-blur-md p-4 rounded-xl border border-agrigreen-500/20 flex flex-col items-center shadow-sm">
-              <div className="w-10 h-10 rounded-full bg-agrigreen-500/20 text-agrigreen-500 flex items-center justify-center font-bold text-sm mb-2">
-                🌱
-              </div>
-              <span className="text-xs font-bold text-agrigreen-700">Farmer</span>
-              <span className="text-[10px] text-text-secondary mt-1">Grow with insights</span>
-            </div>
-            <div className="bg-surface-card/80 backdrop-blur-md p-4 rounded-xl border border-amber-100 flex flex-col items-center shadow-sm">
-              <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-sm mb-2">
-                🏛️
-              </div>
-              <span className="text-xs font-bold text-amber-800">APMC Market</span>
-              <span className="text-[10px] text-text-secondary mt-1">Live price data</span>
-            </div>
-            <div className="bg-surface-card/80 backdrop-blur-md p-4 rounded-xl border border-sky-100 flex flex-col items-center shadow-sm">
-              <div className="w-10 h-10 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-sm mb-2">
-                🏢
-              </div>
-              <span className="text-xs font-bold text-sky-800">Buyer</span>
-              <span className="text-[10px] text-text-secondary mt-1">Direct connections</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* HTML Overlaid Labels for 3D Scene */}
-      {webglSupported && (
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-4 sm:px-[10%] md:px-[20%] mt-32 md:mt-24 lg:mt-32 opacity-80 mix-blend-multiply">
-          
-          <div className="flex flex-col items-center">
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-agrigreen-500/20/90 text-agrigreen-700 border border-agrigreen-500/30">Farmer</span>
-            <span className="text-[11px] text-text-secondary font-medium mt-1 whitespace-nowrap hidden sm:block">Grow with insights</span>
-          </div>
-          
-          <div className="flex flex-col items-center transform translate-y-8 sm:translate-y-12">
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-amber-100/90 text-amber-800 border border-amber-200">APMC Market</span>
-            <span className="text-[11px] text-text-secondary font-medium mt-1 whitespace-nowrap hidden sm:block">Live price data</span>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-sky-100/90 text-sky-800 border border-sky-200">Buyer</span>
-            <span className="text-[11px] text-text-secondary font-medium mt-1 whitespace-nowrap hidden sm:block">Direct connections</span>
-          </div>
-
-        </div>
-      )}
+      <Canvas
+        shadows
+        camera={{ position: [-2, 4, 10], fov: 45 }}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        dpr={[1, 1.5]}
+      >
+        <Scene />
+      </Canvas>
     </div>
   );
 }

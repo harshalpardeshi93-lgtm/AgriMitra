@@ -19,92 +19,69 @@ export default function LandingPage() {
 
   return (
     <div className="space-y-20 pb-20">
-      
+
       {/* 1. HERO SECTION */}
-      <section className="relative min-h-[100vh] lg:min-h-[calc(100vh-4rem)] flex flex-col items-center justify-start pt-20 md:pt-28 overflow-hidden bg-gradient-to-b from-[#e8f3ee] via-[#f4f7f6] to-stone-50">
-        
-        {/* Top Content Layer (Badge, Headline, Description, Buttons) */}
-        <div className="relative z-20 w-full max-w-4xl mx-auto flex flex-col items-center text-center space-y-6 px-4 sm:px-6 lg:px-8">
-          
-          {/* Positioning Pill */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-card/60 backdrop-blur-md text-agrigreen-900 text-xs font-semibold tracking-wide border border-agrigreen-500/30 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
-            <span className="w-2 h-2 rounded-full bg-agrigreen-500 animate-pulse"></span>
-            AI-powered market intelligence for farmers and FPOs
+      <section className="relative min-h-[100vh] lg:min-h-[calc(100vh-4rem)] flex flex-col overflow-hidden bg-surface-bg pt-20 md:pt-24 lg:pt-0">
+
+        {/* Split Layout Container */}
+        <div className="flex-grow flex flex-col lg:flex-row items-center justify-center w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 mt-2 lg:mt-16">
+
+          {/* Left Side: Text Content */}
+          <div className="relative z-20 w-full lg:w-[45%] flex flex-col items-center lg:items-start text-center lg:text-left space-y-6 lg:pr-8 xl:pr-12 pt-8 lg:pt-0">
+
+            {/* Positioning Pill */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-card/60 backdrop-blur-md text-agrigreen-900 text-xs font-semibold tracking-wide border border-agrigreen-500/30 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
+              <span className="w-2 h-2 rounded-full bg-agrigreen-500 animate-pulse"></span>
+              AI-powered market intelligence for better selling decisions
+            </div>
+
+            {/* Main Headline */}
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight text-text-primary leading-[1.1] drop-shadow-sm">
+              Know the price.<br/>
+              Find the buyer.<br/>
+              <span className="text-agrigreen-700">Sell smarter.</span>
+            </h1>
+
+            {/* Supporting Description */}
+            <p className="text-lg md:text-xl text-text-secondary max-w-2xl font-normal leading-relaxed drop-shadow-sm">
+              Compare market prices, discover suitable buyers and make confident, profitable selling decisions.
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4 pb-4 w-full">
+              <Link
+                to="/farmer"
+                className="w-full sm:w-auto px-8 py-4 rounded-full bg-agrigreen-700 hover:bg-agrigreen-700 text-white font-bold text-base transition-all shadow-[0_4px_14px_0_rgb(4,120,87,0.39)] hover:shadow-[0_6px_20px_rgba(4,120,87,0.23)] hover:-translate-y-0.5 flex items-center justify-center gap-2"
+              >
+                <span>Explore Markets &rarr;</span>
+              </Link>
+
+              <Link
+                to="/login"
+                className="w-full sm:w-auto px-8 py-4 rounded-full bg-surface-card/80 backdrop-blur-sm hover:bg-surface-card text-text-primary border border-border-subtle font-semibold text-base transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 shadow-sm"
+              >
+                <span className="text-amber-500">✦</span>
+                <span>Try Demo</span>
+              </Link>
+            </div>
           </div>
 
-          {/* Main Headline */}
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-text-primary leading-[1.1] drop-shadow-sm">
-            Know the price.<br/>
-            Find the buyer.<br/>
-            <span className="text-agrigreen-700">Sell smarter.</span>
-          </h1>
+          {/* Right Side: 3D Scene */}
+          <div className="relative z-10 w-full lg:w-[55%] h-[380px] sm:h-[450px] md:h-[500px] lg:h-[700px] mt-6 lg:mt-0 flex items-center justify-center lg:translate-x-12">
 
-          {/* Supporting Description */}
-          <p className="text-lg md:text-xl text-text-secondary max-w-2xl font-normal leading-relaxed drop-shadow-sm">
-            Compare market prices, discover suitable buyers and make confident, profitable selling decisions.
-          </p>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 pb-4">
-            <Link
-              to="/farmer"
-              className="px-8 py-4 rounded-full bg-agrigreen-700 hover:bg-agrigreen-700 text-white font-bold text-base transition-all shadow-[0_4px_14px_0_rgb(4,120,87,0.39)] hover:shadow-[0_6px_20px_rgba(4,120,87,0.23)] hover:-translate-y-0.5 flex items-center justify-center gap-2"
-            >
-              <span>Explore Markets &rarr;</span>
-            </Link>
-
-            <Link
-              to="/login"
-              className="px-8 py-4 rounded-full bg-surface-card/80 backdrop-blur-sm hover:bg-surface-card text-text-primary border border-border-subtle font-semibold text-base transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 shadow-sm"
-            >
-              <span className="text-amber-500">✦</span>
-              <span>Try Demo</span>
-            </Link>
+            <Suspense fallback={
+              <div className="w-full h-full flex items-center justify-center text-text-secondary text-sm font-mono">
+                Loading 3D Ecosystem...
+              </div>
+            }>
+              <FarmToMarket3D />
+            </Suspense>
           </div>
         </div>
 
-        {/* 3D Scene Environment Area (Below the text) */}
-        <div className="relative z-10 w-full max-w-[1400px] mx-auto h-[400px] sm:h-[450px] md:h-[500px] lg:h-[600px] flex-grow flex items-center justify-center mt-2 px-4">
-          
-          {/* Floating insight cards positioned relative to the 3D scene container */}
-          <div className="absolute top-[10%] left-2 sm:left-[5%] lg:left-[10%] xl:left-[15%] z-30 hidden sm:flex flex-col gap-1 p-3.5 bg-surface-card/80 backdrop-blur-md rounded-2xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] animate-[float_6s_ease-in-out_infinite]">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-agrigreen-500/20 flex items-center justify-center">
-                <TrendingUp className="w-3.5 h-3.5 text-agrigreen-500" />
-              </div>
-              <span className="text-xs font-bold text-text-primary">Live Market Prices</span>
-            </div>
-            <div className="text-[10px] text-text-secondary font-medium ml-8">Market price insight</div>
-            <div className="ml-8 mt-1 text-xs font-bold text-agrigreen-500">+12% this week</div>
-          </div>
-
-          <div className="absolute top-[20%] right-2 sm:right-[5%] lg:right-[10%] xl:right-[15%] z-30 hidden sm:flex flex-col gap-1 p-3.5 bg-surface-card/80 backdrop-blur-md rounded-2xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] animate-[float_7s_ease-in-out_infinite_reverse]">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-sky-100 flex items-center justify-center">
-                <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-              </div>
-              <span className="text-xs font-bold text-text-primary">AI Market Insights</span>
-            </div>
-            <div className="text-[10px] text-text-secondary font-medium ml-8">Market trends & suggestions</div>
-            <div className="ml-8 mt-2 flex items-end gap-1 h-4">
-              <div className="w-1.5 h-2 bg-stone-300 rounded-t-sm"></div>
-              <div className="w-1.5 h-3 bg-stone-300 rounded-t-sm"></div>
-              <div className="w-1.5 h-4 bg-agrigreen-500 rounded-t-sm"></div>
-            </div>
-          </div>
-
-          <Suspense fallback={
-            <div className="w-full h-full flex items-center justify-center text-text-secondary text-sm font-mono">
-              Loading 3D Ecosystem...
-            </div>
-          }>
-            <FarmToMarket3D />
-          </Suspense>
-        </div>
-
-        {/* Stats Bar */}
-        <div className="relative z-20 mt-auto w-full max-w-5xl mx-auto pointer-events-none">
-          <div className="pointer-events-auto flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-24 border-t border-border-subtle/60 pt-6 pb-12 bg-gradient-to-t from-stone-50 via-stone-50 to-transparent">
+        {/* Stats Bar (Bottom) */}
+        <div className="relative z-20 mt-auto w-full max-w-5xl mx-auto pointer-events-none pt-4 pb-4 lg:pb-8">
+          <div className="pointer-events-auto flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-24 border-t border-border-subtle/60 pt-6 bg-gradient-to-t from-stone-50 via-stone-50 to-transparent">
             <div className="flex flex-col items-center text-center">
               <div className="flex items-center gap-2 mb-1">
                 <Store className="w-5 h-5 text-text-secondary" />
@@ -112,9 +89,9 @@ export default function LandingPage() {
               </div>
               <span className="text-sm text-text-secondary font-medium">Nearby APMC Prices</span>
             </div>
-            
+
             <div className="hidden sm:block w-px h-10 bg-stone-200/60"></div>
-            
+
             <div className="flex flex-col items-center text-center">
               <div className="flex items-center gap-2 mb-1">
                 <Leaf className="w-5 h-5 text-agrigreen-500" />
@@ -223,7 +200,7 @@ export default function LandingPage() {
       {/* 3. MARKET INTELLIGENCE SECTION */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-surface-card rounded-3xl border border-border-subtle shadow-sm p-6 md:p-8 space-y-8">
-          
+
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-subtle pb-6">
             <div>
               <div className="flex items-center gap-2">
@@ -251,11 +228,11 @@ export default function LandingPage() {
 
           {/* Mandi Cards & Recharts Area */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
+
             {/* Nearby APMC Cards */}
             <div className="lg:col-span-7 space-y-4">
               <h3 className="text-xs font-bold uppercase text-text-secondary tracking-wider">Nearby APMC Mandi Prices (Prototype Data)</h3>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {DEMO_MARKETS.slice(0, 3).map((m) => (
                   <div key={m.id} className="p-4 rounded-xl border border-border-subtle bg-surface-bg/70 hover:bg-surface-card hover:border-agrigreen-500/50 transition-all space-y-2">
@@ -287,7 +264,7 @@ export default function LandingPage() {
                     <AreaChart data={DEMO_PRICE_TRENDS}>
                       <XAxis dataKey="date" stroke="#78716c" fontSize={11} />
                       <YAxis domain={['dataMin - 100', 'dataMax + 100']} stroke="#78716c" fontSize={11} />
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{ backgroundColor: '#1c1917', color: '#fff', borderRadius: '10px', fontSize: '12px', border: 'none' }}
                       />
                       <Area type="monotone" dataKey="lasalgaon" stroke="#15803d" fill="#dcfce7" strokeWidth={2} name="Lasalgaon APMC" />
@@ -342,15 +319,15 @@ export default function LandingPage() {
       {/* 4. AI SELL ADVISOR SECTION */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-gradient-to-r from-teal-900 to-stone-900 text-white rounded-3xl p-8 md:p-12 space-y-8 relative overflow-hidden shadow-sm">
-          
+
           <div className="max-w-3xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-800/80 text-teal-200 text-xs font-semibold border border-teal-700">
               <Zap className="w-3.5 h-3.5 text-amber-400" />
               <span>Smart Market Timing</span>
             </div>
-            
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">AI Sell Advisor</h2>
-            
+
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">AI Sell Advisor</h2>
+
             <p className="text-stone-300 text-base leading-relaxed">
               AgriMitra analyzes available market data to help identify a suitable market and selling window. By evaluating historical price trends, volatility, and arrival volumes, the advisor estimates expected prices and confidence levels.
             </p>
@@ -388,7 +365,7 @@ export default function LandingPage() {
       {/* 5. BUYER CONNECTION WORKFLOW */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-surface-card rounded-3xl border border-border-subtle p-8 space-y-8 shadow-sm">
-          
+
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-sky-800 bg-sky-50 px-3 py-1 rounded-full border border-sky-200">
               Direct Trading Flow
@@ -401,7 +378,7 @@ export default function LandingPage() {
 
           {/* Workflow Diagram */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 pt-4">
-            
+
             <div className="w-full md:w-1/5 bg-surface-bg p-4 rounded-2xl border border-border-subtle text-center space-y-1">
               <div className="w-8 h-8 rounded-full bg-agrigreen-700 text-white flex items-center justify-center mx-auto text-xs font-bold">
                 1
@@ -465,9 +442,9 @@ export default function LandingPage() {
       {/* 6. PROTOTYPE IMPACT & HONEST METRICS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-stone-900 text-white rounded-3xl p-8 md:p-12 space-y-8">
-          
+
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-3xl font-bold">Platform Prototype Metrics</h2>
+            <h2 className="text-3xl font-bold text-white">Platform Prototype Metrics</h2>
             <p className="text-text-secondary text-sm">
               Real functional capabilities active inside this AgriMitra hackathon prototype.
             </p>
