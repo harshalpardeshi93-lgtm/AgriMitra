@@ -64,6 +64,9 @@
     "table_expected_price": "अपेक्षित (5D)",
     "table_trend": "कल",
     "table_arrivals": "आवक",
+    "table_distance": "अंतर",
+    "table_transport_cost": "वाहतूक",
+    "table_net_realization": "निव्वळ किंमत",
     "table_status": "स्थिती",
     "per_qtl": "/ क्विंटल",
     "rising": "↑ वाढत आहे",
@@ -93,7 +96,15 @@
     "processing": "प्रक्रिया सुरू",
     "paid": "पैसे दिले",
     "completed": "पूर्ण झाले",
-    "cancelled": "रद्द"
+    "cancelled": "रद्द",
+    "not_available": "उपलब्ध नाही",
+    "arrival_unavailable": "आवक डेटा अनुपलब्ध",
+    "requirement_open": "आवश्यकता: खुली / वाटाघाटी करण्यायोग्य",
+    "create_lot_title": "उत्पादन लॉट तयार करा",
+    "cancel": "रद्द करा",
+    "submit": "सबमिट करा",
+    "submitting": "सबमिट करत आहे...",
+    "success": "यश!"
   },
   "advisor": {
     "title": "AI विक्री सल्लागार",

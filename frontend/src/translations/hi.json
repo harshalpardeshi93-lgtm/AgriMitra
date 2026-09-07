@@ -64,6 +64,9 @@
     "table_expected_price": "अनुमानित (5D)",
     "table_trend": "प्रवृत्ति",
     "table_arrivals": "आवक",
+    "table_distance": "दूरी",
+    "table_transport_cost": "परिवहन",
+    "table_net_realization": "शुद्ध मूल्य",
     "table_status": "स्थिति",
     "per_qtl": "/ क्विंटल",
     "rising": "↑ बढ़ रहा है",
@@ -93,7 +96,15 @@
     "processing": "प्रसंस्करण",
     "paid": "भुगतान किया गया",
     "completed": "पूरा हुआ",
-    "cancelled": "रद्द"
+    "cancelled": "रद्द",
+    "not_available": "उपलब्ध नहीं",
+    "arrival_unavailable": "आवक डेटा उपलब्ध नहीं",
+    "requirement_open": "आवश्यकता: खुली / बातचीत योग्य",
+    "create_lot_title": "उपज लॉट बनाएँ",
+    "cancel": "रद्द करें",
+    "submit": "प्रस्तुत करें",
+    "submitting": "प्रस्तुत हो रहा है...",
+    "success": "सफलता!"
   },
   "advisor": {
     "title": "AI बिक्री सलाहकार",

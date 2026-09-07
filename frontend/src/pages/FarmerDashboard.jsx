@@ -3,11 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import { 
   Sprout, MapPin, Scale, Award, Search, AlertCircle, Info, 
   ArrowUpDown, Sparkles, TrendingUp, Calendar, CheckCircle2, 
-  ShieldCheck, ArrowRight, UserCheck, Package, ShoppingBag, Eye, RefreshCw, Clock, IndianRupee, Plus, CloudRain
+  ShieldCheck, ArrowRight, UserCheck, Package, ShoppingBag, Eye, RefreshCw, Clock, IndianRupee, Plus, CloudRain, XCircle
 } from 'lucide-react';
 import { 
   getCrops, getMarkets, getMarketPrices, getTrends, 
-  getAdvisorRecommendation, getMyProduceLots, getFarmerTransactions, getBuyersApi 
+  getAdvisorRecommendation, getMyProduceLots, getFarmerTransactions, getBuyersApi, createProduceLot 
 } from '../services/api';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { useAuth } from '../context/AuthContext';
@@ -43,6 +43,16 @@ export default function FarmerDashboard() {
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+
+  // Lot Creation Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [lotQuantityKg, setLotQuantityKg] = useState('500');
+  const [lotQualityGrade, setLotQualityGrade] = useState('Grade A');
+  const [lotExpectedPrice, setLotExpectedPrice] = useState('');
+  const [lotMarketId, setLotMarketId] = useState('');
+  const [submittingLot, setSubmittingLot] = useState(false);
+  const [lotFormError, setLotFormError] = useState('');
+  const [lotFormSuccess, setLotFormSuccess] = useState('');
 
   // Time greeting helper
   const getGreeting = () => {
@@ -141,6 +151,65 @@ export default function FarmerDashboard() {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleOpenCreateModal = (buyer = null) => {
+    setIsModalOpen(true);
+    setLotFormError('');
+    setLotFormSuccess('');
+    setLotQuantityKg(quantityKg || '500');
+    setLotQualityGrade(qualityGrade || 'Grade A');
+    setLotExpectedPrice(advisorData?.expected_price?.toString() || '');
+    const recMarket = markets.find(m => m.name === advisorData?.recommended_market);
+    setLotMarketId(recMarket ? recMarket.id.toString() : (markets[0]?.id.toString() || ''));
+  };
+
+  const handleCreateLotSubmit = async (e) => {
+    e.preventDefault();
+    setLotFormError('');
+    setLotFormSuccess('');
+
+    if (!selectedCropId) {
+      setLotFormError('Please select a crop first.');
+      return;
+    }
+    const qty = parseFloat(lotQuantityKg);
+    if (isNaN(qty) || qty <= 0) {
+      setLotFormError('Quantity must be greater than 0.');
+      return;
+    }
+    const price = parseFloat(lotExpectedPrice);
+    if (isNaN(price) || price <= 0) {
+      setLotFormError('Expected price must be greater than 0.');
+      return;
+    }
+    if (!lotMarketId) {
+      setLotFormError('Please select a market.');
+      return;
+    }
+
+    setSubmittingLot(true);
+    try {
+      await createProduceLot({
+        crop_id: parseInt(selectedCropId),
+        market_id: parseInt(lotMarketId),
+        quantity_quintals: qty / 100,
+        quality_grade: lotQualityGrade,
+        expected_price_per_quintal: price,
+        status: 'Available'
+      });
+      setLotFormSuccess(t('dashboard.success'));
+      const lotsData = await getMyProduceLots(effectiveUserId).catch(() => []);
+      setMyLots(lotsData);
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setLotFormSuccess('');
+      }, 1200);
+    } catch (err) {
+      setLotFormError(err.message || 'Failed to create lot.');
+    } finally {
+      setSubmittingLot(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
@@ -164,13 +233,13 @@ export default function FarmerDashboard() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link
-            to="/fpo"
+          <button
+            onClick={() => handleOpenCreateModal()}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-agrigreen-700 hover:bg-agrigreen-900 text-white rounded-xl text-xs font-bold transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span>{t('dashboard.create_produce_lot')}</span>
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -445,8 +514,11 @@ export default function FarmerDashboard() {
               <thead className="bg-surface-bg text-text-secondary uppercase font-semibold text-[11px] border-b border-border-subtle">
                 <tr>
                   <th className="px-4 py-3">{t('dashboard.table_market')}</th>
+                  <th className="px-4 py-3 text-center">{t('dashboard.table_distance')}</th>
+                  <th className="px-4 py-3 text-center">{t('dashboard.table_transport_cost')}</th>
                   <th className="px-4 py-3 text-right">{t('dashboard.table_current_price')}</th>
                   <th className="px-4 py-3 text-right">{t('dashboard.table_expected_price')}</th>
+                  <th className="px-4 py-3 text-center">{t('dashboard.table_net_realization')}</th>
                   <th className="px-4 py-3 text-center">{t('dashboard.table_trend')}</th>
                   <th className="px-4 py-3 text-right">{t('dashboard.table_arrivals')}</th>
                   <th className="px-4 py-3 text-center">{t('dashboard.table_status')}</th>
@@ -461,12 +533,15 @@ export default function FarmerDashboard() {
                         {m.market_name}
                         <div className="text-[10px] font-normal text-text-secondary">{m.district}, {m.state}</div>
                       </td>
+                      <td className="px-4 py-3.5 text-center text-text-secondary text-xs">{t('dashboard.not_available')}</td>
+                      <td className="px-4 py-3.5 text-center text-text-secondary text-xs">{t('dashboard.not_available')}</td>
                       <td className="px-4 py-3.5 text-right font-semibold text-text-primary">
-                        ₹{m.latest_modal_price.toLocaleString('en-IN')} / qtl
+                        {m.latest_modal_price > 0 ? `₹${m.latest_modal_price.toLocaleString('en-IN')} / qtl` : t('dashboard.not_available')}
                       </td>
                       <td className="px-4 py-3.5 text-right font-bold text-agrigreen-900">
-                        ₹{m.expected_5d_price.toLocaleString('en-IN')} / qtl
+                        {m.expected_5d_price > 0 ? `₹${m.expected_5d_price.toLocaleString('en-IN')} / qtl` : t('dashboard.not_available')}
                       </td>
+                      <td className="px-4 py-3.5 text-center text-text-secondary text-xs">{t('dashboard.not_available')}</td>
                       <td className="px-4 py-3.5 text-center font-bold">
                         <span className={`px-2 py-0.5 rounded text-xs ${
                           m.trend_direction === 'Upward' ? 'bg-agrigreen-500/20 text-agrigreen-700' :
@@ -476,8 +551,8 @@ export default function FarmerDashboard() {
                           {m.trend_direction === 'Upward' ? t('dashboard.rising') : m.trend_direction === 'Downward' ? t('dashboard.falling') : t('dashboard.stable')}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-right text-text-secondary">
-                        {m.arrival_quantity} Quintals
+                      <td className="px-4 py-3.5 text-right text-text-secondary text-xs">
+                        {m.arrival_quantity != null ? `${m.arrival_quantity} ${t('dashboard.tons')}` : t('dashboard.arrival_unavailable')}
                       </td>
                       <td className="px-4 py-3.5 text-center">
                         {isTop ? (
@@ -622,55 +697,48 @@ export default function FarmerDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
-          {[
-            { id: 2, name: 'Suresh Buyer', location: 'Mumbai APMC', match: '94%', crop: advisorData?.crop_name || 'Tomato', req: '10–20 Tons', price: '₹2,900–₹3,050/qtl' },
-            { id: 4, name: 'Reliance Fresh Procurement', location: 'Pune APMC', match: '91%', crop: advisorData?.crop_name || 'Tomato', req: '50 Tons', price: '₹2,850–₹3,000/qtl' },
-            { id: 5, name: 'Sahyadri Agro Processing', location: 'Nashik Mandi', match: '88%', crop: advisorData?.crop_name || 'Tomato', req: '15 Tons', price: '₹2,800–₹2,950/qtl' },
-          ].map((buyer) => (
+          {buyersList.length > 0 ? buyersList.slice(0, 3).map((buyer) => (
             <div key={buyer.id} className="bg-surface-bg rounded-2xl border border-border-subtle p-5 flex flex-col justify-between space-y-4 hover:border-agrigreen-500/60 transition-all">
               <div className="space-y-2">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="font-bold text-text-primary text-base">{buyer.name}</h4>
+                    <h4 className="font-bold text-text-primary text-base">{buyer.name || 'Verified Buyer'}</h4>
                     <span className="text-[11px] font-semibold text-agrigreen-700 bg-agrigreen-500/20 px-2 py-0.5 rounded border border-emerald-300 inline-flex items-center gap-1 mt-1">
                       <ShieldCheck className="w-3 h-3 text-agrigreen-700" /> Verified Buyer
                     </span>
                   </div>
-                  <span className="text-xs font-extrabold text-agrigreen-700 bg-agrigreen-500/10 px-2.5 py-1 rounded-full border border-agrigreen-500/30">
-                    {buyer.match} match
-                  </span>
                 </div>
 
                 <div className="space-y-1.5 text-xs text-text-secondary pt-2">
                   <div className="flex justify-between">
                     <span className="text-text-secondary font-medium">Buying Crop:</span>
-                    <span className="font-bold text-text-primary">{buyer.crop} (Grade A)</span>
+                    <span className="font-bold text-text-primary">{crops.find(c => c.id.toString() === selectedCropId)?.name || 'Any'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-secondary font-medium">Required Volume:</span>
-                    <span className="font-semibold text-text-primary">{buyer.req}</span>
+                    <span className="text-text-secondary font-medium">Requirement:</span>
+                    <span className="font-semibold text-text-primary">{t('dashboard.requirement_open')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-text-secondary font-medium">Location:</span>
-                    <span className="font-medium text-text-primary">{buyer.location}</span>
-                  </div>
-                  <div className="flex justify-between pt-1 border-t border-border-subtle">
-                    <span className="text-text-secondary font-medium">Expected Price:</span>
-                    <span className="font-bold text-agrigreen-900">{buyer.price}</span>
+                    <span className="font-medium text-text-primary">Any APMC</span>
                   </div>
                 </div>
               </div>
 
               <button
                 type="button"
-                onClick={() => navigate('/fpo')}
+                onClick={() => handleOpenCreateModal(buyer)}
                 className="w-full py-2 bg-agrigreen-700 hover:bg-agrigreen-900 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
               >
                 <span>{t('dashboard.sell_directly')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
-          ))}
+          )) : (
+            <div className="col-span-3 text-center text-text-secondary text-sm py-8 bg-surface-bg rounded-xl border border-dashed border-border-subtle">
+              No registered buyers available.
+            </div>
+          )}
         </div>
       </div>
 
@@ -684,16 +752,12 @@ export default function FarmerDashboard() {
               <ShoppingBag className="w-5 h-5 text-agrigreen-700" />
               {t('dashboard.my_lots')}
             </h3>
-            <Link to="/fpo" className="text-xs font-bold text-agrigreen-700 hover:underline flex items-center gap-1">
-              <span>FPO Hub</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
           </div>
 
           {myLots.length === 0 ? (
             <div className="py-8 text-center text-text-secondary text-xs bg-surface-bg rounded-2xl border border-dashed border-border-subtle">
               No produce lots listed yet.<br />
-              <Link to="/fpo" className="text-agrigreen-700 font-bold underline mt-1 inline-block">Create Produce Lot</Link>
+              <button onClick={() => handleOpenCreateModal()} className="text-agrigreen-700 font-bold underline mt-1 inline-block">Create Produce Lot</button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -724,10 +788,6 @@ export default function FarmerDashboard() {
               <Package className="w-5 h-5 text-agrigreen-700" />
               {t('dashboard.transactions')}
             </h3>
-            <Link to="/fpo" className="text-xs font-bold text-agrigreen-700 hover:underline flex items-center gap-1">
-              <span>View All</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
           </div>
 
           {myTransactions.length === 0 ? (
@@ -771,6 +831,81 @@ export default function FarmerDashboard() {
             getFarmerTransactions(effectiveUserId).then(t => setMyTransactions(t));
           }}
         />
+      )}
+
+      {/* Create Lot Modal (Moved into FarmerDashboard for seamless flow) */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-surface-card rounded-3xl p-6 w-full max-w-md shadow-2xl animate-fade-in border border-border-subtle">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-text-primary">{t('dashboard.create_lot_title')}</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-text-secondary hover:text-text-primary transition-colors">
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            {lotFormError && (
+              <div className="mb-4 p-3 bg-red-50 text-red-800 text-sm rounded-xl border border-red-200">
+                {lotFormError}
+              </div>
+            )}
+            {lotFormSuccess && (
+              <div className="mb-4 p-3 bg-agrigreen-50 text-agrigreen-800 text-sm rounded-xl border border-agrigreen-200 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                {lotFormSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateLotSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase text-text-secondary mb-1">Crop</label>
+                <select value={selectedCropId} disabled className="w-full bg-surface-subtle border border-border-subtle rounded-xl px-4 py-2.5 text-text-primary text-sm opacity-80 cursor-not-allowed">
+                  <option value={selectedCropId}>{crops.find(c => c.id.toString() === selectedCropId)?.name}</option>
+                </select>
+                <p className="text-[10px] text-text-secondary mt-1">Pre-filled from your analysis.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase text-text-secondary mb-1">Quantity (kg)</label>
+                <input type="number" value={lotQuantityKg} onChange={e => setLotQuantityKg(e.target.value)} className="w-full bg-surface-bg border border-border-subtle rounded-xl px-4 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none" required />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase text-text-secondary mb-1">Quality Grade</label>
+                <select value={lotQualityGrade} onChange={e => setLotQualityGrade(e.target.value)} className="w-full bg-surface-bg border border-border-subtle rounded-xl px-4 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none">
+                  <option value="Grade A">Grade A</option>
+                  <option value="Grade B">Grade B</option>
+                  <option value="Grade C">Grade C</option>
+                  <option value="Premium">Premium</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase text-text-secondary mb-1">Expected Price (₹/Quintal)</label>
+                <input type="number" value={lotExpectedPrice} onChange={e => setLotExpectedPrice(e.target.value)} className="w-full bg-surface-bg border border-border-subtle rounded-xl px-4 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none" required />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase text-text-secondary mb-1">{t('dashboard.table_market')}</label>
+                <select value={lotMarketId} onChange={e => setLotMarketId(e.target.value)} className="w-full bg-surface-bg border border-border-subtle rounded-xl px-4 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none" required>
+                  <option value="">Select Market</option>
+                  {markets.map(m => (
+                    <option key={m.id} value={m.id}>{m.name} ({m.district})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2.5 border border-border-subtle text-text-primary hover:bg-surface-subtle font-bold rounded-xl transition-colors">
+                  {t('dashboard.cancel')}
+                </button>
+                <button type="submit" disabled={submittingLot} className="flex-1 py-2.5 bg-agrigreen-700 hover:bg-agrigreen-900 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
+                  {submittingLot ? (
+                    <>{t('dashboard.submitting')}</>
+                  ) : (
+                    <>{t('dashboard.submit')}</>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
     </div>

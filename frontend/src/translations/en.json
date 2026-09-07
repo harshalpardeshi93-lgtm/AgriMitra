@@ -64,6 +64,9 @@
     "table_expected_price": "Expected (5D)",
     "table_trend": "Trend",
     "table_arrivals": "Arrivals",
+    "table_distance": "Distance",
+    "table_transport_cost": "Transport",
+    "table_net_realization": "Net Price",
     "table_status": "Status",
     "per_qtl": "/ qtl",
     "rising": "↑ Rising",
@@ -93,7 +96,15 @@
     "processing": "Processing",
     "paid": "Paid",
     "completed": "Completed",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "not_available": "Not available",
+    "arrival_unavailable": "Arrival data unavailable",
+    "requirement_open": "Requirement: Open / Negotiable",
+    "create_lot_title": "Create Produce Lot",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "success": "Success!"
   },
   "advisor": {
     "title": "AI Sell Advisor",
