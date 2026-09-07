@@ -431,29 +431,27 @@ export default function FarmToMarket3D() {
   if (!webglSupported) {
     return (
       <div className="w-full h-full p-6 flex flex-col justify-end items-center text-center pb-20">
-        <div className="text-xs font-semibold uppercase tracking-wider text-agrigreen-500 mb-6">
-          AgriMitra Value Chain
-        </div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-agrigreen-500 mb-6">{t("farm3d.value_chain")}</div>
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 w-full max-w-3xl">
           <div className="bg-surface-card/80 backdrop-blur-md p-3 rounded-xl border border-agrigreen-500/20 flex flex-col items-center shadow-sm">
             <div className="w-8 h-8 rounded-full bg-agrigreen-500/20 text-agrigreen-500 flex items-center justify-center font-bold text-xs mb-2">🌱</div>
-            <span className="text-xs font-bold text-agrigreen-700">Farmer</span>
-            <span className="text-[9px] text-text-secondary mt-1">Produce</span>
+            <span className="text-xs font-bold text-agrigreen-700">{t("farm3d.farmer")}</span>
+            <span className="text-[9px] text-text-secondary mt-1">{t("farm3d.produce")}</span>
           </div>
           <div className="bg-surface-card/80 backdrop-blur-md p-3 rounded-xl border border-amber-100 flex flex-col items-center shadow-sm">
             <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-xs mb-2">🏛️</div>
-            <span className="text-xs font-bold text-amber-800">Market Data</span>
-            <span className="text-[9px] text-text-secondary mt-1">Market Data</span>
+            <span className="text-xs font-bold text-amber-800">{t("farm3d.market_data")}</span>
+            <span className="text-[9px] text-text-secondary mt-1">{t("farm3d.market_data")}</span>
           </div>
           <div className="bg-surface-card/80 backdrop-blur-md p-3 rounded-xl border border-purple-100 flex flex-col items-center shadow-sm">
             <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-xs mb-2">✨</div>
-            <span className="text-xs font-bold text-purple-800">AI Insight</span>
-            <span className="text-[9px] text-text-secondary mt-1">Smart Decision</span>
+            <span className="text-xs font-bold text-purple-800">{t("farm3d.ai_insight")}</span>
+            <span className="text-[9px] text-text-secondary mt-1">{t("farm3d.smart_decision")}</span>
           </div>
           <div className="bg-surface-card/80 backdrop-blur-md p-3 rounded-xl border border-sky-100 flex flex-col items-center shadow-sm">
             <div className="w-8 h-8 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-xs mb-2">🏢</div>
-            <span className="text-xs font-bold text-sky-800">Buyer Match</span>
-            <span className="text-[9px] text-text-secondary mt-1">Direct Connection</span>
+            <span className="text-xs font-bold text-sky-800">{t("farm3d.buyer_match")}</span>
+            <span className="text-[9px] text-text-secondary mt-1">{t("farm3d.direct_connection")}</span>
           </div>
         </div>
       </div>

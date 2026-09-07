@@ -23,15 +23,15 @@ export default function Register() {
     setError('');
 
     if (!name.trim()) {
-      setError('Please enter your full name.');
+      setError(t('auth.err_enter_name'));
       return;
     }
     if (!phone.trim()) {
-      setError('Please enter your phone number.');
+      setError(t('auth.err_enter_phone'));
       return;
     }
     if (!password || password.length < 3) {
-      setError('Password must be at least 3 characters long.');
+      setError(t('auth.err_pass_length'));
       return;
     }
 

@@ -1,20 +1,58 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { 
-  Sprout, MapPin, Scale, Award, Search, AlertCircle, Info, 
-  ArrowUpDown, Sparkles, TrendingUp, Calendar, CheckCircle2, 
+import {
+  Sprout, MapPin, Scale, Award, Search, AlertCircle, Info,
+  ArrowUpDown, Sparkles, TrendingUp, Calendar, CheckCircle2,
   ShieldCheck, ArrowRight, UserCheck, Package, ShoppingBag, Eye, RefreshCw, Clock, IndianRupee, Plus, CloudRain, XCircle
 } from 'lucide-react';
-import { 
-  getCrops, getMarkets, getMarketPrices, getTrends, 
-  getAdvisorRecommendation, getMyProduceLots, getFarmerTransactions, getBuyersApi, createProduceLot 
+import {
+  getCrops, getMarkets, getMarketPrices, getTrends,
+  getAdvisorRecommendation, getMyProduceLots, getFarmerTransactions, getBuyersApi, createProduceLot
 } from '../services/api';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { translateCrop, translateRole, translateMarket, translateUnit, translateStatus, translateAdvisorWindow, translateRisk } from '../utils/i18nHelpers';
 import TransactionDetailModal from '../components/TransactionDetailModal';
 
+
+const translateDynamicReason = (reason, t) => {
+  if (reason.includes('No active markets found')) return t('advisor.reasons.no_active_markets');
+  if (reason.includes('Not enough reliable data to form a recommendation')) return t('advisor.reasons.insufficient_data');
+  if (reason.includes('Not enough reliable data to recommend waiting')) return t('advisor.reasons.low_confidence');
+  if (reason.includes('minimal upside or potential near-term drop')) return t('advisor.reasons.minimal_upside');
+  if (reason.includes('makes waiting fully riskier')) return t('advisor.reasons.partial_sell_volatility');
+  if (reason.includes('Current price is attractive relative to risk')) return t('advisor.reasons.sell_now_risk');
+  if (reason.includes('makes waiting riskier')) return t('advisor.reasons.partial_sell_upside');
+  if (reason.includes('no available storage makes waiting unsafe')) return t('advisor.reasons.sell_now_no_storage');
+  if (reason.includes('manage systemic risk')) return t('advisor.reasons.partial_sell_systemic');
+  if (reason.includes('current risk is relatively low')) return t('advisor.reasons.wait_low_risk');
+  if (reason.includes('holding is not feasible without storage')) return t('advisor.reasons.sell_now_upside_no_storage');
+  if (reason.includes('potential upside is limited')) return t('advisor.reasons.sell_now_limited_upside');
+  if (reason.includes('manage weather risk')) return t('advisor.reasons.partial_sell_weather');
+  if (reason.includes('transport becomes difficult')) return t('advisor.reasons.sell_now_weather');
+
+  // Parametrized strings
+  if (reason.includes('highest overall realization')) {
+    const match = reason.match(/\(₹([\d,]+)\/qtl\)/);
+    const price = match ? match[1] : '';
+    return t('advisor.reasons.highest_realization', { price });
+  }
+  if (reason.includes('Chronological validation error MAE')) {
+    const match = reason.match(/₹([\d.]+)\/qtl over (\d+) historical/);
+    const mae = match ? match[1] : '';
+    const obs = match ? match[2] : '';
+    return t('advisor.reasons.mae_validation', { mae, obs });
+  }
+  if (reason.includes('Grade A quality grade qualifies')) return t('advisor.reasons.grade_a_premium');
+  if (reason.includes('Arrival quantity (supply volume) is currently unavailable')) return t('advisor.reasons.arrival_unavailable_warn');
+  if (reason.includes('High weather risk may impact')) return t('advisor.reasons.weather_risk_impact');
+
+  return reason;
+};
+
 export default function FarmerDashboard() {
+
   const { user } = useAuth();
   const { t } = useLanguage();
   const effectiveUserId = user?.id;
@@ -91,7 +129,7 @@ export default function FarmerDashboard() {
         }
       } catch (err) {
         if (isMounted) {
-          setErrorMessage('We couldn\'t load market options. Please ensure backend server is running.');
+          setErrorMessage(t('dashboard.err_load_markets'));
         }
       } finally {
         if (isMounted) setLoadingCrops(false);
@@ -135,7 +173,7 @@ export default function FarmerDashboard() {
 
     } catch (err) {
       console.error(err);
-      setErrorMessage('We couldn\'t load AI analysis data. Please try again.');
+      setErrorMessage(t('dashboard.err_load_ai'));
     } finally {
       setLoadingAnalysis(false);
     }
@@ -168,21 +206,21 @@ export default function FarmerDashboard() {
     setLotFormSuccess('');
 
     if (!selectedCropId) {
-      setLotFormError('Please select a crop first.');
+      setLotFormError(t('dashboard.err_select_crop'));
       return;
     }
     const qty = parseFloat(lotQuantityKg);
     if (isNaN(qty) || qty <= 0) {
-      setLotFormError('Quantity must be greater than 0.');
+      setLotFormError(t('dashboard.err_qty_0'));
       return;
     }
     const price = parseFloat(lotExpectedPrice);
     if (isNaN(price) || price <= 0) {
-      setLotFormError('Expected price must be greater than 0.');
+      setLotFormError(t('dashboard.err_price_0'));
       return;
     }
     if (!lotMarketId) {
-      setLotFormError('Please select a market.');
+      setLotFormError(t('dashboard.err_select_market'));
       return;
     }
 
@@ -204,7 +242,7 @@ export default function FarmerDashboard() {
         setLotFormSuccess('');
       }, 1200);
     } catch (err) {
-      setLotFormError(err.message || 'Failed to create lot.');
+      setLotFormError(err.message || t('dashboard.err_create_lot'));
     } finally {
       setSubmittingLot(false);
     }
@@ -212,7 +250,7 @@ export default function FarmerDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      
+
       {/* 1. Header Greetings */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-subtle pb-6">
         <div>
@@ -254,7 +292,7 @@ export default function FarmerDashboard() {
           <div className="py-6 text-center text-text-secondary font-medium">{t('dashboard.loading_crops')}</div>
         ) : (
           <form onSubmit={handleFormSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-            
+
             {/* Crop Select */}
             <div>
               <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
@@ -266,7 +304,7 @@ export default function FarmerDashboard() {
                 className="w-full bg-surface-bg border border-border-subtle rounded-xl px-3.5 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none"
               >
                 {crops.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.id} value={c.id}>{t(`crops.${c.name.toLowerCase()}`)}</option>
                 ))}
               </select>
             </div>
@@ -297,7 +335,7 @@ export default function FarmerDashboard() {
               >
                 <option value="All">{t('dashboard.all_locations')}</option>
                 {markets.map(m => (
-                  <option key={m.id} value={m.name}>{m.name} ({m.district})</option>
+                  <option key={m.id} value={m.name}>{translateMarket(m.name, t)} ({m.district})</option>
                 ))}
               </select>
             </div>
@@ -312,10 +350,10 @@ export default function FarmerDashboard() {
                 onChange={(e) => setQualityGrade(e.target.value)}
                 className="w-full bg-surface-bg border border-border-subtle rounded-xl px-3.5 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none"
               >
-                <option value="Grade A">Grade A</option>
-                <option value="Grade B">Grade B</option>
-                <option value="Grade C">Grade C</option>
-                <option value="Premium">Premium</option>
+                <option value="Grade A">{t("quality.Grade A")}</option>
+                <option value="Grade B">{t("quality.Grade B")}</option>
+                <option value="Grade C">{t("quality.Grade C")}</option>
+                <option value="Premium">{t("quality.Premium")}</option>
               </select>
             </div>
 
@@ -349,7 +387,7 @@ export default function FarmerDashboard() {
         <div className="bg-amber-50 border border-amber-200 text-amber-900 p-5 rounded-2xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-bold text-sm">Notice</h4>
+            <h4 className="font-bold text-sm">{t('dashboard.notice')}</h4>
             <p className="text-xs">{errorMessage}</p>
           </div>
         </div>
@@ -358,11 +396,11 @@ export default function FarmerDashboard() {
       {/* 3. SECTION 2 — AI SELL ADVISOR RESULT (Primary Visual Priority) */}
       {advisorData && (
         <div className="bg-gradient-to-br from-teal-900 via-teal-800 to-stone-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-6 relative overflow-hidden">
-          
+
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-teal-700/50 pb-4">
             <div className="flex items-center gap-2">
               <span className="text-xl">🌾</span>
-              <h2 className="text-xl font-bold tracking-tight text-white">Best Selling Opportunity</h2>
+              <h2 className="text-xl font-bold tracking-tight text-white">{advisorData.decision === 'INSUFFICIENT_DATA' || advisorData.decision === 'LOW_CONFIDENCE' ? t('advisor.ai_market_assessment') : t('advisor.best_selling_opportunity')}</h2>
             </div>
             <span className="text-xs text-teal-200 bg-teal-700/80 px-3 py-1 rounded-full border border-teal-500/50 font-medium">
               {advisorData.data_disclaimer}
@@ -370,7 +408,7 @@ export default function FarmerDashboard() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
-            
+
             {/* Top Market Name & Price */}
             <div className="space-y-3 lg:border-r lg:border-teal-700/80 pr-4">
               <div className="text-xs font-bold uppercase tracking-wider text-teal-300">{t('advisor.recommended_market')}</div>
@@ -383,13 +421,13 @@ export default function FarmerDashboard() {
 
             {/* Key Metrics Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:col-span-2">
-              
+
               <div className="bg-teal-950/60 p-4 rounded-2xl border border-teal-700/40">
                 <span className="text-[11px] font-semibold text-teal-300 uppercase block">{t('advisor.expected_price')}</span>
                 {advisorData.expected_price != null ? (
                   <div className="text-2xl font-bold text-white mt-1">₹{advisorData.expected_price.toLocaleString('en-IN')}</div>
                 ) : (
-                  <div className="text-2xl font-bold text-white mt-1">Price unavailable</div>
+                  <div className="text-2xl font-bold text-white mt-1 text-sm">{t('advisor.forecast_unavailable')}</div>
                 )}
                 <span className="text-[10px] text-teal-400 font-medium">{t('dashboard.per_qtl')}</span>
               </div>
@@ -399,7 +437,7 @@ export default function FarmerDashboard() {
                 {advisorData.current_modal_price != null ? (
                   <div className="text-xl font-bold text-teal-100 mt-1">₹{advisorData.current_modal_price.toLocaleString('en-IN')}</div>
                 ) : (
-                  <div className="text-xl font-bold text-teal-100 mt-1">Price unavailable</div>
+                  <div className="text-xl font-bold text-teal-100 mt-1">{t('advisor.price_unavailable')}</div>
                 )}
                 {advisorData.expected_gain != null ? (
                   <span className="text-sm font-semibold text-teal-200 block">
@@ -409,9 +447,9 @@ export default function FarmerDashboard() {
               </div>
 
               <div className="bg-teal-950/60 p-4 rounded-2xl border border-teal-700/40">
-                <span className="text-[11px] font-semibold text-teal-300 uppercase block">Recommended Window</span>
-                <div className="text-base font-bold text-amber-300 mt-1">{advisorData.recommended_window}</div>
-                <span className="text-[10px] text-stone-300">{advisorData.confidence_level}</span>
+                <span className="text-[11px] font-semibold text-teal-300 uppercase block">{t('advisor.downside_risk')}</span>
+                <div className="text-base font-bold text-amber-300 mt-1">{advisorData.risk_level === 'UNKNOWN' ? t('advisor.insufficient_data') : (translateRisk(advisorData.risk_level, t) || t('advisor.risk_unavailable'))}</div>
+                <span className="text-[10px] text-stone-300">{t('advisor.confidence')}: {advisorData.confidence_score != null ? `${Math.round(advisorData.confidence_score)}%` : t('advisor.confidence_unavailable')}</span>
               </div>
 
             </div>
@@ -419,32 +457,39 @@ export default function FarmerDashboard() {
           </div>
 
           {/* AI Recommendation Reason */}
-          {advisorData.key_reasons && advisorData.key_reasons.length > 0 && (
-            <div className="bg-teal-950/70 p-4 rounded-2xl border border-teal-700/40 text-xs text-teal-100 leading-relaxed flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                {advisorData.decision ? (
-                  <>
-                    <div className="flex items-center gap-2 mb-1">
-                      {advisorData.decision === "SELL_NOW" && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>}
-                      {advisorData.decision === "PARTIAL_SELL" && <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>}
-                      {advisorData.decision === "WAIT" && <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>}
-                      {(advisorData.decision === "LOW_CONFIDENCE" || advisorData.decision === "INSUFFICIENT_DATA") && <span className="w-2.5 h-2.5 rounded-full bg-stone-500"></span>}
-                      <span className="font-bold text-amber-300 text-sm">
-                        {t(`advisor.decision.${advisorData.decision}`) || t('advisor.recommendation')}
-                      </span>
-                    </div>
-                    <p className="text-sm">
-                      {advisorData.decision_reason || advisorData.key_reasons.join(' ')}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <span className="font-bold text-amber-300">{t('advisor.ai_recommendation')} </span>
-                    "{advisorData.key_reasons.join(' ')}"
-                  </>
+          {advisorData.decision && (
+            <div className="bg-teal-950/70 p-5 rounded-2xl border border-teal-700/40 text-teal-100 leading-relaxed space-y-4">
+
+              <div>
+                <span className="text-[11px] font-semibold text-teal-300 uppercase block mb-1">{t('advisor.decisions.sell_action')}</span>
+                <div className="flex items-center gap-2">
+                  {advisorData.decision === "SELL_NOW" && <span className="w-3 h-3 rounded-full bg-emerald-500"></span>}
+                  {advisorData.decision === "PARTIAL_SELL" && <span className="w-3 h-3 rounded-full bg-yellow-500"></span>}
+                  {advisorData.decision === "WAIT" && <span className="w-3 h-3 rounded-full bg-blue-500"></span>}
+                  {(advisorData.decision === "LOW_CONFIDENCE" || advisorData.decision === "INSUFFICIENT_DATA") && <span className="w-3 h-3 rounded-full bg-stone-500"></span>}
+
+                  <span className="font-extrabold text-amber-300 text-xl">
+                    {t(`advisor.decisions.${advisorData.decision.toLowerCase()}`) || advisorData.decision_label}
+                  </span>
+                </div>
+
+                {advisorData.decision === "PARTIAL_SELL" && advisorData.recommended_sell_quantity && (
+                   <div className="mt-2 text-sm text-yellow-200 bg-yellow-900/30 p-2 rounded-lg inline-block border border-yellow-700/50">
+                      {t('dashboard.quantity')}: Sell {advisorData.recommended_sell_quantity} {t("units.qtl")}, Hold {advisorData.recommended_hold_quantity} {t("units.qtl")}
+                   </div>
                 )}
               </div>
+
+              <div>
+                <span className="text-[11px] font-semibold text-teal-300 uppercase block mb-1">{t('advisor.recommendation_reason')}</span>
+                <p className="text-sm">
+                  {advisorData.decision_reason}
+                </p>
+                {advisorData.market_systemic_risk === "HIGH" && (
+                  <p className="text-sm text-red-300 mt-1">{t('advisor.systemic_market_risk')}: HIGH</p>
+                )}
+              </div>
+
             </div>
           )}
 
@@ -472,7 +517,7 @@ export default function FarmerDashboard() {
               </div>
             </div>
           )}
-          
+
           {!advisorData.weather_data_available && (
             <div className="bg-teal-950/20 p-3 rounded-2xl border border-teal-700/20 text-[11px] text-teal-500 mt-4 flex items-center gap-2">
               <CloudRain className="w-3.5 h-3.5 opacity-50" />
@@ -530,7 +575,7 @@ export default function FarmerDashboard() {
                   return (
                     <tr key={idx} className={`hover:bg-surface-bg/80 transition-colors ${isTop ? 'bg-agrigreen-500/10/50 font-semibold' : ''}`}>
                       <td className="px-4 py-3.5 font-bold text-text-primary text-sm">
-                        {m.market_name}
+                        {translateMarket(m.market_name, t)}
                         <div className="text-[10px] font-normal text-text-secondary">{m.district}, {m.state}</div>
                       </td>
                       <td className="px-4 py-3.5 text-center text-text-secondary text-xs">{t('dashboard.not_available')}</td>
@@ -561,7 +606,7 @@ export default function FarmerDashboard() {
                             ★ Best Market
                           </span>
                         ) : (
-                          <span className="text-text-secondary text-xs">Standard</span>
+                          <span className="text-text-secondary text-xs">{t("quality.Standard")}</span>
                         )}
                       </td>
                     </tr>
@@ -575,33 +620,25 @@ export default function FarmerDashboard() {
 
       {/* 5. SECTION 4 — Price Trend & Selling Window */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left: Price Trend Chart */}
         <div className="lg:col-span-2 bg-surface-card rounded-3xl border border-border-subtle p-6 shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-border-subtle pb-3">
             <div>
               <h3 className="font-bold text-text-primary text-base flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-agrigreen-700" />
-                Price Trend
-              </h3>
-              <p className="text-xs text-text-secondary">Historical modal price movement over the last 25 days</p>
+                <TrendingUp className="w-5 h-5 text-agrigreen-700" />{t("dashboard.price_trend")}</h3>
+              <p className="text-xs text-text-secondary">{t("dashboard.trend_desc")}</p>
             </div>
             {chartData.length > 0 ? (
-              <span className="text-xs font-semibold text-agrigreen-700 bg-agrigreen-500/10 px-2.5 py-1 rounded border border-agrigreen-500/30">
-                Data available for trend analysis
-              </span>
+              <span className="text-xs font-semibold text-agrigreen-700 bg-agrigreen-500/10 px-2.5 py-1 rounded border border-agrigreen-500/30">{t("dashboard.data_available")}</span>
             ) : (
-              <span className="text-xs font-semibold text-text-secondary bg-surface-bg px-2.5 py-1 rounded border border-border-subtle">
-                Insufficient data for trend
-              </span>
+              <span className="text-xs font-semibold text-text-secondary bg-surface-bg px-2.5 py-1 rounded border border-border-subtle">{t("dashboard.insufficient_trend")}</span>
             )}
           </div>
 
           <div className="h-64 w-full pt-2">
             {chartData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-text-secondary text-xs">
-                No trend chart data available.
-              </div>
+              <div className="h-full flex items-center justify-center text-text-secondary text-xs">{t("dashboard.no_trend_data")}</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
@@ -613,8 +650,8 @@ export default function FarmerDashboard() {
                   </defs>
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#a8a29e" />
                   <YAxis tick={{ fontSize: 10 }} domain={['dataMin - 100', 'dataMax + 100']} stroke="#a8a29e" />
-                  <Tooltip 
-                    formatter={(val) => [`₹${val} / quintal`, 'Modal Price']}
+                  <Tooltip
+                    formatter={(val) => [`₹${val} / {t("units.quintal")}`, 'Modal Price']}
                     labelFormatter={(label) => `Date: ${label}`}
                   />
                   <Area type="monotone" dataKey="modal_price" stroke="#047857" strokeWidth={2.5} fillOpacity={1} fill="url(#priceColor)" />
@@ -628,41 +665,39 @@ export default function FarmerDashboard() {
         <div className="bg-surface-card rounded-3xl border border-border-subtle p-6 shadow-sm flex flex-col justify-between space-y-4">
           <div>
             <h3 className="font-bold text-text-primary text-base flex items-center gap-2 border-b border-border-subtle pb-3">
-              <Calendar className="w-5 h-5 text-agrigreen-700" />
-              When Should I Sell?
-            </h3>
-            
+              <Calendar className="w-5 h-5 text-agrigreen-700" />{t("dashboard.when_should_i_sell")}</h3>
+
             <div className="mt-4 space-y-3">
               <div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl shadow-sm text-center">
-                <span className="text-[11px] font-bold text-amber-800 uppercase tracking-widest block mb-2">Recommended Window</span>
+                <span className="text-[11px] font-bold text-amber-800 uppercase tracking-widest block mb-2">{t("dashboard.recommended_window")}</span>
                 <div className="text-3xl font-black text-amber-900 tracking-tight">
-                  {advisorData ? advisorData.recommended_window : 'Next 2–3 days'}
+                  {translateAdvisorWindow(advisorData ? advisorData.recommended_window : "Next 2-3 days", t)}
                 </div>
               </div>
 
               <div className="space-y-2 text-xs text-text-secondary">
                 <div className="flex justify-between py-1 border-b border-border-subtle">
-                  <span className="text-text-secondary">Price Trend:</span>
-                  <span className="font-bold text-agrigreen-700">Rising</span>
+                  <span className="text-text-secondary">{t('advisor.price_trend')}:</span>
+                  <span className="font-bold text-agrigreen-700">{t("dashboard.rising")}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-border-subtle">
-                  <span className="text-text-secondary">Buyer Demand:</span>
-                  <span className="font-bold text-text-primary">High</span>
+                  <span className="text-text-secondary">{t('advisor.buyer_demand')}:</span>
+                  <span className="font-bold text-text-primary">{t("dashboard.high")}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-border-subtle">
-                  <span className="text-text-secondary">Current Price:</span>
+                  <span className="text-text-secondary">{t('advisor.current_price')}:</span>
                   {advisorData?.current_modal_price != null ? (
-                    <span className="font-bold text-text-primary">₹{advisorData.current_modal_price.toLocaleString('en-IN')} / qtl</span>
+                    <span className="font-bold text-text-primary">₹{advisorData.current_modal_price.toLocaleString('en-IN')} / {t("units.qtl")}</span>
                   ) : (
-                    <span className="font-bold text-text-primary">Price unavailable</span>
+                    <span className="font-bold text-text-primary">{t('advisor.price_unavailable')}</span>
                   )}
                 </div>
                 <div className="flex justify-between py-1 border-b border-border-subtle">
-                  <span className="text-text-secondary">Expected Price:</span>
+                  <span className="text-text-secondary">{t('advisor.expected_price')}:</span>
                   {advisorData?.expected_price != null ? (
-                    <span className="font-bold text-agrigreen-900">₹{advisorData.expected_price.toLocaleString('en-IN')} / qtl</span>
+                    <span className="font-bold text-agrigreen-900">₹{advisorData.expected_price.toLocaleString('en-IN')} / {t("units.qtl")}</span>
                   ) : (
-                    <span className="font-bold text-agrigreen-900">Price unavailable</span>
+                    <span className="font-bold text-agrigreen-900">{t('advisor.price_unavailable')}</span>
                   )}
                 </div>
               </div>
@@ -704,8 +739,7 @@ export default function FarmerDashboard() {
                   <div>
                     <h4 className="font-bold text-text-primary text-base">{buyer.name || 'Verified Buyer'}</h4>
                     <span className="text-[11px] font-semibold text-agrigreen-700 bg-agrigreen-500/20 px-2 py-0.5 rounded border border-emerald-300 inline-flex items-center gap-1 mt-1">
-                      <ShieldCheck className="w-3 h-3 text-agrigreen-700" /> Verified Buyer
-                    </span>
+                      <ShieldCheck className="w-3 h-3 text-agrigreen-700" />{t("dashboard.verified_buyer")}</span>
                   </div>
                 </div>
 
@@ -720,7 +754,7 @@ export default function FarmerDashboard() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-text-secondary font-medium">Location:</span>
-                    <span className="font-medium text-text-primary">Any APMC</span>
+                    <span className="font-medium text-text-primary">{t("dashboard.any_apmc")}</span>
                   </div>
                 </div>
               </div>
@@ -735,16 +769,14 @@ export default function FarmerDashboard() {
               </button>
             </div>
           )) : (
-            <div className="col-span-3 text-center text-text-secondary text-sm py-8 bg-surface-bg rounded-xl border border-dashed border-border-subtle">
-              No registered buyers available.
-            </div>
+            <div className="col-span-3 text-center text-text-secondary text-sm py-8 bg-surface-bg rounded-xl border border-dashed border-border-subtle">{t("dashboard.no_buyers")}</div>
           )}
         </div>
       </div>
 
       {/* 7. SECTION 6 & 7 — My Produce & Recent Sales Transactions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Left: My Produce */}
         <div className="bg-surface-card rounded-3xl border border-border-subtle p-6 shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-border-subtle pb-3">
@@ -755,24 +787,23 @@ export default function FarmerDashboard() {
           </div>
 
           {myLots.length === 0 ? (
-            <div className="py-8 text-center text-text-secondary text-xs bg-surface-bg rounded-2xl border border-dashed border-border-subtle">
-              No produce lots listed yet.<br />
-              <button onClick={() => handleOpenCreateModal()} className="text-agrigreen-700 font-bold underline mt-1 inline-block">Create Produce Lot</button>
+            <div className="py-8 text-center text-text-secondary text-xs bg-surface-bg rounded-2xl border border-dashed border-border-subtle">{t("dashboard.no_lots")}<br />
+              <button onClick={() => handleOpenCreateModal()} className="text-agrigreen-700 font-bold underline mt-1 inline-block">{t("dashboard.create_lot")}</button>
             </div>
           ) : (
             <div className="space-y-3">
               {myLots.slice(0, 3).map((lot) => (
                 <div key={lot.id} className="bg-surface-bg p-4 rounded-2xl border border-border-subtle flex justify-between items-center text-xs">
                   <div>
-                    <div className="font-bold text-text-primary text-sm">{lot.crop_name}</div>
-                    <div className="text-text-secondary font-medium">{lot.quantity_quintals * 100} kg ({lot.quantity_quintals} qtl) • {lot.quality_grade}</div>
+                    <div className="font-bold text-text-primary text-sm">{translateCrop(lot.crop_name, t)}</div>
+                    <div className="text-text-secondary font-medium">{lot.quantity_quintals * 100} kg ({lot.quantity_quintals} {t("units.qtl")}) • {lot.quality_grade}</div>
                   </div>
                   <div className="text-right space-y-1">
-                    <div className="font-bold text-agrigreen-900">₹{lot.expected_price_per_quintal.toLocaleString('en-IN')} / qtl</div>
+                    <div className="font-bold text-agrigreen-900">₹{lot.expected_price_per_quintal.toLocaleString('en-IN')} / {t("units.qtl")}</div>
                     <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
                       lot.status === 'Available' ? 'bg-agrigreen-500/20 text-agrigreen-700' : 'bg-amber-100 text-amber-800'
                     }`}>
-                      {lot.status}
+                      {translateStatus(lot.status, t)}
                     </span>
                   </div>
                 </div>
@@ -791,16 +822,14 @@ export default function FarmerDashboard() {
           </div>
 
           {myTransactions.length === 0 ? (
-            <div className="py-8 text-center text-text-secondary text-xs bg-surface-bg rounded-2xl border border-dashed border-border-subtle">
-              No recent sales transactions recorded yet.
-            </div>
+            <div className="py-8 text-center text-text-secondary text-xs bg-surface-bg rounded-2xl border border-dashed border-border-subtle">{t("dashboard.no_sales")}</div>
           ) : (
             <div className="space-y-3">
               {myTransactions.slice(0, 3).map((txn) => (
                 <div key={txn.id} className="bg-surface-bg p-4 rounded-2xl border border-border-subtle flex justify-between items-center text-xs">
                   <div>
-                    <div className="font-bold text-text-primary text-sm">{txn.crop_name} • {txn.buyer_name}</div>
-                    <div className="text-text-secondary font-medium">{txn.quantity_quintals} qtl • ₹{txn.agreed_price_per_quintal}/qtl</div>
+                    <div className="font-bold text-text-primary text-sm">{translateCrop(txn.crop_name, t)} • {translateRole(txn.buyer_name, t)}</div>
+                    <div className="text-text-secondary font-medium">{txn.quantity_quintals} {t("units.qtl")} • ₹{txn.agreed_price_per_quintal}/qtl</div>
                   </div>
                   <div className="text-right space-y-1">
                     <div className="font-bold text-agrigreen-900">₹{txn.total_amount.toLocaleString('en-IN')}</div>
@@ -810,7 +839,7 @@ export default function FarmerDashboard() {
                       className="inline-flex items-center gap-1 text-[11px] font-bold text-agrigreen-700 hover:underline"
                     >
                       <Eye className="w-3 h-3" />
-                      <span>{txn.payment_status}</span>
+                      <span>{translateStatus(txn.payment_status, t)}</span>
                     </button>
                   </div>
                 </div>
@@ -858,23 +887,23 @@ export default function FarmerDashboard() {
 
             <form onSubmit={handleCreateLotSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase text-text-secondary mb-1">Crop</label>
+                <label className="block text-xs font-semibold uppercase text-text-secondary mb-1">{t("buyer.crop")}</label>
                 <select value={selectedCropId} disabled className="w-full bg-surface-subtle border border-border-subtle rounded-xl px-4 py-2.5 text-text-primary text-sm opacity-80 cursor-not-allowed">
                   <option value={selectedCropId}>{crops.find(c => c.id.toString() === selectedCropId)?.name}</option>
                 </select>
-                <p className="text-[10px] text-text-secondary mt-1">Pre-filled from your analysis.</p>
+                <p className="text-[10px] text-text-secondary mt-1">{t("dashboard.crop_prefilled")}</p>
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase text-text-secondary mb-1">Quantity (kg)</label>
                 <input type="number" value={lotQuantityKg} onChange={e => setLotQuantityKg(e.target.value)} className="w-full bg-surface-bg border border-border-subtle rounded-xl px-4 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none" required />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase text-text-secondary mb-1">Quality Grade</label>
+                <label className="block text-xs font-semibold uppercase text-text-secondary mb-1">{t("dashboard.quality_grade")}</label>
                 <select value={lotQualityGrade} onChange={e => setLotQualityGrade(e.target.value)} className="w-full bg-surface-bg border border-border-subtle rounded-xl px-4 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none">
-                  <option value="Grade A">Grade A</option>
-                  <option value="Grade B">Grade B</option>
-                  <option value="Grade C">Grade C</option>
-                  <option value="Premium">Premium</option>
+                  <option value="Grade A">{t("quality.Grade A")}</option>
+                  <option value="Grade B">{t("quality.Grade B")}</option>
+                  <option value="Grade C">{t("quality.Grade C")}</option>
+                  <option value="Premium">{t("quality.Premium")}</option>
                 </select>
               </div>
               <div>
@@ -884,9 +913,9 @@ export default function FarmerDashboard() {
               <div>
                 <label className="block text-xs font-semibold uppercase text-text-secondary mb-1">{t('dashboard.table_market')}</label>
                 <select value={lotMarketId} onChange={e => setLotMarketId(e.target.value)} className="w-full bg-surface-bg border border-border-subtle rounded-xl px-4 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none" required>
-                  <option value="">Select Market</option>
+                  <option value="">{t("dashboard.select_market")}</option>
                   {markets.map(m => (
-                    <option key={m.id} value={m.id}>{m.name} ({m.district})</option>
+                    <option key={m.id} value={m.id}>{translateMarket(m.name, t)} ({m.district})</option>
                   ))}
                 </select>
               </div>

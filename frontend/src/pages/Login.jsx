@@ -38,11 +38,11 @@ export default function Login() {
     setError('');
 
     if (!phone.strip?.() && !phone) {
-      setError('Please enter your phone number.');
+      setError(t('auth.err_enter_phone'));
       return;
     }
     if (!password) {
-      setError('Please enter your password.');
+      setError(t('auth.err_enter_password'));
       return;
     }
 
@@ -51,7 +51,7 @@ export default function Login() {
       const loggedUser = await login(phone, password);
       redirectByRole(loggedUser.role);
     } catch (err) {
-      setError(err.message || 'Phone number or password is incorrect.');
+      setError(err.message || t('auth.err_invalid_creds'));
     } finally {
       setSubmitting(false);
     }
@@ -66,7 +66,7 @@ export default function Login() {
       const loggedUser = await login(demoUser.phone, demoUser.password);
       redirectByRole(loggedUser.role);
     } catch (err) {
-      setError(err.message || 'Quick demo login failed.');
+      setError(err.message || t('auth.err_quick_demo'));
     } finally {
       setSubmitting(false);
     }
@@ -81,7 +81,7 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-agrigreen-700 text-white font-bold text-xl shadow-sm mb-1">
             <Sprout className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-bold text-text-primary">AgriMitra</h1>
+          <h1 className="text-2xl font-bold text-text-primary">{t("nav.agrimitra")}</h1>
           <p className="text-sm font-medium text-text-secondary">
             {t('auth.login_to_account')}
           </p>

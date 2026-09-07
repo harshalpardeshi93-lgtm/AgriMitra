@@ -25,14 +25,14 @@ export const LanguageProvider = ({ children }) => {
     document.documentElement.lang = language;
   }, [language]);
 
-  const t = (key) => {
+  const t = (key, params = {}) => {
     const keys = key.split('.');
     let value = translations[language];
     for (const k of keys) {
       value = value?.[k];
       if (value === undefined) break;
     }
-    
+
     if (value === undefined) {
       // Fallback to English
       value = translations['en'];
@@ -41,7 +41,14 @@ export const LanguageProvider = ({ children }) => {
         if (value === undefined) break;
       }
     }
-    return value || key;
+
+    let result = value || key;
+    if (typeof result === 'string' && params) {
+      for (const [k, v] of Object.entries(params)) {
+        result = result.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
+      }
+    }
+    return result;
   };
 
   return (

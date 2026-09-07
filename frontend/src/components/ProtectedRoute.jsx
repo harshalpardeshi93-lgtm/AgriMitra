@@ -12,9 +12,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
 
   if (loading) {
     return (
-      <div className="py-20 text-center text-text-secondary font-medium">
-        Loading session...
-      </div>
+      <div className="py-20 text-center text-text-secondary font-medium">{t("common.loading_session")}</div>
     );
   }
 

@@ -9,6 +9,8 @@ import {
   getOffersReceived, updateOfferStatus, getFarmerTransactions
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import { translateCrop, translateRole, translateMarket, translateUnit, translateStatus } from '../utils/i18nHelpers';
 import TransactionDetailModal from '../components/TransactionDetailModal';
 
 /**
@@ -16,6 +18,7 @@ import TransactionDetailModal from '../components/TransactionDetailModal';
  */
 export default function FPODashboard() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const effectiveUserId = user?.id;
 
   // Data State
@@ -73,7 +76,7 @@ export default function FPODashboard() {
       setTransactions(txnsData);
     } catch (err) {
       console.error('Error loading FPO Dashboard data:', err);
-      setError('Failed to load FPO Hub data. Please ensure the backend server is running.');
+      setError(t('fpo.err_load_data'));
     } finally {
       setLoading(false);
     }
@@ -104,35 +107,35 @@ export default function FPODashboard() {
 
     // Validation
     if (!cropId) {
-      setFormError('Please select a crop.');
+      setFormError(t('dashboard.err_select_crop'));
       return;
     }
 
     const qty = parseFloat(quantityKg);
     if (isNaN(qty) || qty <= 0) {
-      setFormError('Quantity must be greater than 0.');
+      setFormError(t('dashboard.err_qty_0'));
       return;
     }
 
     if (!qualityGrade) {
-      setFormError('Please select a quality grade.');
+      setFormError(t('dashboard.err_select_quality'));
       return;
     }
 
     const price = parseFloat(expectedPrice);
     if (isNaN(price) || price <= 0) {
-      setFormError('Expected price must be greater than 0.');
+      setFormError(t('dashboard.err_price_0'));
       return;
     }
 
     if (!marketId) {
-      setFormError('Please select a market / location.');
+      setFormError(t('dashboard.err_select_market'));
       return;
     }
 
     setSubmitting(true);
     try {
-      // 1 Quintal = 100 kg
+      // 1 Quintal = 100 {t("units.kg")}
       const quantityQuintals = qty / 100;
 
       await createProduceLot({
@@ -144,7 +147,7 @@ export default function FPODashboard() {
         status: 'Available'
       });
 
-      setFormSuccess('Produce lot created successfully.');
+      setFormSuccess(t('fpo.success_lot_created'));
       
       // Refresh backend data
       const [updatedLots, updatedOffers] = await Promise.all([
@@ -161,7 +164,7 @@ export default function FPODashboard() {
       }, 1200);
 
     } catch (err) {
-      setFormError(err.message || 'We couldn\'t create the lot. Please check your information and try again.');
+      setFormError(err.message || t('fpo.err_create_lot'));
     } finally {
       setSubmitting(false);
     }
@@ -179,7 +182,7 @@ export default function FPODashboard() {
       setMyLots(updatedLots);
       setReceivedOffers(updatedOffers);
     } catch (err) {
-      alert('Failed to update offer status. Please try again.');
+      alert(t('fpo.err_update_offer'));
     } finally {
       setUpdatingOfferId(null);
     }
@@ -199,17 +202,11 @@ export default function FPODashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-subtle pb-6">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-agrigreen-900 bg-agrigreen-500/20 px-2.5 py-1 rounded border border-emerald-300">
-              FPO Hub
-            </span>
-            <span className="text-xs font-medium text-text-secondary bg-surface-subtle px-2.5 py-1 rounded border border-border-subtle">
-              Prototype data
-            </span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-agrigreen-900 bg-agrigreen-500/20 px-2.5 py-1 rounded border border-emerald-300">{t("fpo.fpo_hub")}</span>
+            <span className="text-xs font-medium text-text-secondary bg-surface-subtle px-2.5 py-1 rounded border border-border-subtle">{t("fpo.prototype_data")}</span>
           </div>
-          <h1 className="text-3xl font-bold text-text-primary mt-2">FPO Hub</h1>
-          <p className="text-text-secondary text-sm mt-1">
-            Manage aggregated produce and connect with suitable buyers.
-          </p>
+          <h1 className="text-3xl font-bold text-text-primary mt-2">{t('fpo.fpo_hub')}</h1>
+          <p className="text-text-secondary text-sm mt-1">{t("fpo.manage_produce")}</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -219,7 +216,7 @@ export default function FPODashboard() {
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-agrigreen-700 hover:bg-agrigreen-900 text-white font-bold text-sm shadow-sm transition-colors"
           >
             <Plus className="w-4 h-4" />
-            <span>Create Produce Lot</span>
+            <span>{t("fpo.create_lot_btn")}</span>
           </button>
         </div>
       </div>
@@ -233,9 +230,9 @@ export default function FPODashboard() {
             <ShoppingBag className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-xs font-medium text-text-secondary uppercase tracking-wider">Active Lots</div>
+            <div className="text-xs font-medium text-text-secondary uppercase tracking-wider">{t("fpo.active_lots")}</div>
             <div className="text-2xl font-bold text-text-primary mt-0.5">{activeLots.length}</div>
-            <div className="text-[11px] text-agrigreen-700 font-medium mt-0.5">Visible to buyers</div>
+            <div className="text-[11px] text-agrigreen-700 font-medium mt-0.5">{t("fpo.visible_to_buyers")}</div>
           </div>
         </div>
 
@@ -245,9 +242,9 @@ export default function FPODashboard() {
             <Layers className="w-6 h-6 text-text-primary" />
           </div>
           <div>
-            <div className="text-xs font-medium text-text-secondary uppercase tracking-wider">Available Produce</div>
+            <div className="text-xs font-medium text-text-secondary uppercase tracking-wider">{t('fpo.available_produce')}</div>
             <div className="text-2xl font-bold text-text-primary mt-0.5">
-              {(availableProduceQuintals * 100).toLocaleString('en-IN')} <span className="text-sm font-normal text-text-secondary">kg</span>
+              {(availableProduceQuintals * 100).toLocaleString('en-IN')} <span className="text-sm font-normal text-text-secondary">{t("fpo.kg_unit")}</span>
             </div>
             <div className="text-[11px] text-text-secondary mt-0.5">{availableProduceQuintals} Quintals</div>
           </div>
@@ -259,9 +256,9 @@ export default function FPODashboard() {
             <Package className="w-6 h-6 text-blue-700" />
           </div>
           <div>
-            <div className="text-xs font-medium text-text-secondary uppercase tracking-wider">Offers Received</div>
+            <div className="text-xs font-medium text-text-secondary uppercase tracking-wider">{t("fpo.offers_received")}</div>
             <div className="text-2xl font-bold text-text-primary mt-0.5">{totalOffersReceived}</div>
-            <div className="text-[11px] text-blue-700 font-medium mt-0.5">From interested buyers</div>
+            <div className="text-[11px] text-blue-700 font-medium mt-0.5">{t("fpo.from_buyers")}</div>
           </div>
         </div>
 
@@ -271,9 +268,9 @@ export default function FPODashboard() {
             <CheckCircle2 className="w-6 h-6 text-agrigreen-500" />
           </div>
           <div>
-            <div className="text-xs font-medium text-text-secondary uppercase tracking-wider">Completed Sales</div>
+            <div className="text-xs font-medium text-text-secondary uppercase tracking-wider">{t('fpo.completed_sales')}</div>
             <div className="text-2xl font-bold text-text-primary mt-0.5">{completedSales}</div>
-            <div className="text-[11px] text-text-secondary mt-0.5">Accepted deals</div>
+            <div className="text-[11px] text-text-secondary mt-0.5">{t("fpo.accepted_deals")}</div>
           </div>
         </div>
 
@@ -290,7 +287,7 @@ export default function FPODashboard() {
               : 'border-transparent text-text-secondary hover:text-text-primary'
           }`}
         >
-          My Produce Lots ({myLots.length})
+          {t('tabs.my_produce_lots')} ({myLots.length})
         </button>
 
         <button
@@ -302,7 +299,7 @@ export default function FPODashboard() {
               : 'border-transparent text-text-secondary hover:text-text-primary'
           }`}
         >
-          All Offers Received ({receivedOffers.length})
+          {t('tabs.all_offers_received')} ({receivedOffers.length})
         </button>
 
         <button
@@ -314,7 +311,7 @@ export default function FPODashboard() {
               : 'border-transparent text-text-secondary hover:text-text-primary'
           }`}
         >
-          Sales Transactions ({transactions.length})
+          {t('tabs.sales_transactions')} ({transactions.length})
         </button>
       </div>
 
@@ -323,13 +320,13 @@ export default function FPODashboard() {
       {loading ? (
         <div className="py-12 text-center text-text-secondary font-medium flex justify-center items-center gap-2">
           <RefreshCw className="w-5 h-5 animate-spin text-agrigreen-700" />
-          <span>Loading your lots...</span>
+          <span>{t("fpo.loading_lots")}</span>
         </div>
       ) : error ? (
         <div className="bg-amber-50 border border-amber-200 text-amber-900 p-5 rounded-2xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-bold">Notice</h4>
+            <h4 className="font-bold">{t("fpo.notice")}</h4>
             <p className="text-sm">{error}</p>
           </div>
         </div>
@@ -339,7 +336,7 @@ export default function FPODashboard() {
           {activeTab === 'lots' && !selectedLotForOffers && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-text-primary">My Produce Lots</h2>
+                <h2 className="text-xl font-bold text-text-primary">{t("fpo.my_produce_lots")}</h2>
                 <span className="text-xs text-text-secondary">
                   {myLots.length} lot{myLots.length !== 1 ? 's' : ''} listed
                 </span>
@@ -348,14 +345,14 @@ export default function FPODashboard() {
               {myLots.length === 0 ? (
                 <div className="py-12 text-center text-text-secondary font-medium bg-surface-bg rounded-2xl border border-border-subtle border-dashed space-y-3">
                   <Package className="w-10 h-10 text-text-secondary mx-auto" />
-                  <p>You haven't created any produce lots yet.</p>
+                  <p>{t('fpo.no_lots_created')}</p>
                   <button
                     type="button"
                     onClick={handleOpenCreateModal}
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-agrigreen-700 hover:bg-agrigreen-900 text-white rounded-xl text-xs font-semibold"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Create Produce Lot</span>
+                    <span>{t("fpo.create_lot_btn")}</span>
                   </button>
                 </div>
               ) : (
@@ -372,31 +369,31 @@ export default function FPODashboard() {
                         <div className="space-y-3">
                           <div className="flex justify-between items-start">
                             <span className="text-xs font-semibold text-agrigreen-700 bg-agrigreen-500/10 border border-agrigreen-500/30 px-2.5 py-0.5 rounded">
-                              {lot.quality_grade}
+                              {t(`quality.${lot.quality_grade}`)}
                             </span>
                             <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
                               lot.status === 'Available' ? 'bg-agrigreen-500/10 text-agrigreen-700 border-agrigreen-500/30' :
                               lot.status === 'Offer Received' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                               'bg-surface-subtle text-text-primary border-border-subtle'
                             }`}>
-                              {lot.status}
+                              {translateStatus(lot.status, t)}
                             </span>
                           </div>
 
-                          <h3 className="text-xl font-bold text-text-primary">{lot.crop_name}</h3>
+                          <h3 className="text-xl font-bold text-text-primary">{translateCrop(lot.crop_name, t)}</h3>
 
                           <div className="space-y-2 text-xs border-t border-border-subtle pt-3 text-text-secondary">
                             <div className="flex justify-between items-center">
-                              <span className="text-text-secondary font-medium">Quantity:</span>
-                              <span className="font-bold text-text-primary">{qtyKg.toLocaleString('en-IN')} kg ({lot.quantity_quintals} qtl)</span>
+                              <span className="text-text-secondary font-medium">{t("dashboard.quantity")}:</span>
+                              <span className="font-bold text-text-primary">{qtyKg.toLocaleString('en-IN')} kg ({lot.quantity_quintals} {t("units.qtl")})</span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-text-secondary font-medium">Expected Price:</span>
-                              <span className="font-bold text-agrigreen-900">₹{lot.expected_price_per_quintal.toLocaleString('en-IN')} / quintal</span>
+                              <span className="text-text-secondary font-medium">{t("dashboard.expected_price")}:</span>
+                              <span className="font-bold text-agrigreen-900">₹{lot.expected_price_per_quintal.toLocaleString('en-IN')} / {t("units.quintal")}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-text-secondary font-medium">Market / Location:</span>
-                              <span className="font-medium text-text-primary">{lot.market_name}</span>
+                              <span className="text-text-secondary font-medium">{t("dashboard.market_location")}:</span>
+                              <span className="font-medium text-text-primary">{translateMarket(lot.market_name, t)}</span>
                             </div>
                             <div className="flex justify-between items-center pt-2 border-t border-border-subtle">
                               <span className="text-text-secondary font-semibold">Offers Received:</span>
@@ -421,7 +418,7 @@ export default function FPODashboard() {
                             }}
                             className="inline-flex items-center gap-1 text-xs font-bold text-agrigreen-700 hover:text-agrigreen-900 bg-agrigreen-500/10 hover:bg-agrigreen-500/20 px-3 py-1.5 rounded-lg border border-agrigreen-500/30/60 transition-colors"
                           >
-                            <span>View Offers</span>
+                            <span>{t("fpo.view_offers")}</span>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -440,22 +437,18 @@ export default function FPODashboard() {
                 <div>
                   <h2 className="text-xl font-bold text-text-primary">
                     {selectedLotForOffers 
-                      ? `Offers Received for ${selectedLotForOffers.crop_name} (Lot #${selectedLotForOffers.id})`
+                      ? `Offers Received for ${translateCrop(selectedLotForOffers.crop_name, t)} (Lot #${selectedLotForOffers.id})`
                       : 'All Offers Received'
                     }
                   </h2>
-                  <p className="text-xs text-text-secondary mt-0.5">
-                    Review and respond to direct price offers from verified institutional buyers.
-                  </p>
+                  <p className="text-xs text-text-secondary mt-0.5">{t("fpo.review_offers_desc")}</p>
                 </div>
                 {selectedLotForOffers && (
                   <button
                     type="button"
                     onClick={() => setSelectedLotForOffers(null)}
                     className="text-xs font-semibold text-text-secondary hover:text-text-primary bg-surface-subtle hover:bg-stone-200 px-3 py-1.5 rounded-lg self-start sm:self-auto"
-                  >
-                    Show All Offers
-                  </button>
+                  >{t("fpo.show_all_offers")}</button>
                 )}
               </div>
 
@@ -466,9 +459,8 @@ export default function FPODashboard() {
 
                 if (displayOffers.length === 0) {
                   return (
-                    <div className="py-12 text-center text-text-secondary font-medium bg-surface-bg rounded-2xl border border-border-subtle border-dashed">
-                      No offers received for this produce lot yet.<br />
-                      <span className="text-xs text-text-secondary">Buyers browsing the marketplace can make offers directly.</span>
+                    <div className="py-12 text-center text-text-secondary font-medium bg-surface-bg rounded-2xl border border-border-subtle border-dashed">{t("fpo.no_offers_lot")}<br />
+                      <span className="text-xs text-text-secondary">{t("fpo.buyers_browsing")}</span>
                     </div>
                   );
                 }
@@ -482,28 +474,28 @@ export default function FPODashboard() {
                       >
                         <div className="space-y-2 flex-1">
                           <div className="flex flex-wrap items-center gap-3">
-                            <h3 className="font-bold text-lg text-text-primary">{offer.crop_name}</h3>
+                            <h3 className="font-bold text-lg text-text-primary">{translateCrop(offer.crop_name, t)}</h3>
                             <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
                               offer.status === 'Pending' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                               offer.status === 'Accepted' ? 'bg-agrigreen-500/10 text-agrigreen-700 border-agrigreen-500/30' :
                               'bg-red-50 text-red-700 border-red-200'
                             }`}>
-                              {offer.status}
+                              {translateStatus(offer.status, t)}
                             </span>
                           </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-text-secondary pt-2">
                             <div>
-                              <span className="text-text-secondary font-medium block uppercase text-[10px]">Buyer Name</span>
-                              <span className="font-bold text-text-primary text-sm">{offer.farmer_name || 'Institutional Buyer A'}</span>
+                              <span className="text-text-secondary font-medium block uppercase text-[10px]">{t("fpo.buyer_name")}</span>
+                              <span className="font-bold text-text-primary text-sm">{translateRole(offer.farmer_name || 'Institutional Buyer A', t)}</span>
                             </div>
                             <div>
-                              <span className="text-text-secondary font-medium block uppercase text-[10px]">Offered Quantity</span>
-                              <span className="font-bold text-text-primary text-sm">{offer.quantity} Quintals ({(offer.quantity * 100).toLocaleString('en-IN')} kg)</span>
+                              <span className="text-text-secondary font-medium block uppercase text-[10px]">{t("fpo.offered_qty")}</span>
+                              <span className="font-bold text-text-primary text-sm">{offer.quantity} {t("units.quintal")} ({(offer.quantity * 100).toLocaleString('en-IN')} {t("units.kg")})</span>
                             </div>
                             <div>
-                              <span className="text-text-secondary font-medium block uppercase text-[10px]">Offered Price</span>
-                              <span className="font-bold text-agrigreen-700 text-sm">₹{offer.offered_price.toLocaleString('en-IN')} / quintal</span>
+                              <span className="text-text-secondary font-medium block uppercase text-[10px]">{t("buyer.offered_price")}</span>
+                              <span className="font-bold text-agrigreen-700 text-sm">₹{offer.offered_price.toLocaleString('en-IN')} / {t("units.quintal")}</span>
                             </div>
                           </div>
 
@@ -526,7 +518,7 @@ export default function FPODashboard() {
                                 className="px-4 py-2 bg-agrigreen-700 hover:bg-agrigreen-900 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
                               >
                                 <Check className="w-4 h-4" />
-                                <span>Accept Offer</span>
+                                <span>{t("fpo.accept_offer")}</span>
                               </button>
                               <button
                                 type="button"
@@ -535,12 +527,12 @@ export default function FPODashboard() {
                                 className="px-4 py-2 bg-surface-card border border-border-subtle hover:border-red-500 text-text-primary hover:text-red-700 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 flex items-center gap-1.5"
                               >
                                 <XCircle className="w-4 h-4" />
-                                <span>Reject</span>
+                                <span>{t("fpo.reject")}</span>
                               </button>
                             </>
                           ) : (
                             <div className="text-xs text-text-secondary font-medium text-right">
-                              Status: <strong className="text-text-primary">{offer.status}</strong>
+                              Status: <strong className="text-text-primary">{translateStatus(offer.status, t)}</strong>
                             </div>
                           )}
                         </div>
@@ -559,43 +551,40 @@ export default function FPODashboard() {
             <div className="bg-surface-card rounded-2xl border border-border-subtle shadow-sm overflow-hidden">
               <div className="p-5 border-b border-border-subtle flex justify-between items-center">
                 <div>
-                  <h2 className="font-bold text-lg text-text-primary">Sales Transactions</h2>
-                  <p className="text-sm text-text-secondary">Track confirmed sales, agreed prices, and buyer payment progress.</p>
+                  <h2 className="font-bold text-lg text-text-primary">{t("fpo.sales_txns")}</h2>
+                  <p className="text-sm text-text-secondary">{t("fpo.track_sales")}</p>
                 </div>
-                <span className="text-xs font-semibold text-text-secondary bg-surface-subtle px-3 py-1 rounded-full border border-border-subtle">
-                  Demo payment tracking
-                </span>
+                <span className="text-xs font-semibold text-text-secondary bg-surface-subtle px-3 py-1 rounded-full border border-border-subtle">{t("buyer.demo_payment_tracking")}</span>
               </div>
 
               {transactions.length === 0 ? (
-                <div className="py-12 text-center text-text-secondary text-sm bg-surface-bg border-b border-border-subtle">
-                  No sales transactions recorded yet.<br />
-                  <span className="text-xs text-text-secondary">Transactions are created automatically when you accept a buyer's offer.</span>
+                <div className="py-12 text-center text-text-secondary text-sm bg-surface-bg border-b border-border-subtle">{t("fpo.no_sales_yet")}<br />
+                  <span className="text-xs text-text-secondary">{t("fpo.txn_auto_created")}</span>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm text-text-primary">
                     <thead className="bg-surface-bg text-text-secondary uppercase font-semibold text-[11px] border-b border-border-subtle">
                       <tr>
-                        <th className="px-5 py-3.5">Txn ID & Crop</th>
-                        <th className="px-5 py-3.5">Buyer</th>
-                        <th className="px-5 py-3.5 text-right">Quantity</th>
-                        <th className="px-5 py-3.5 text-right">Agreed Price</th>
-                        <th className="px-5 py-3.5 text-right">Total Amount</th>
-                        <th className="px-5 py-3.5 text-center">Payment Status</th>
-                        <th className="px-5 py-3.5 text-center">Txn Status</th>
-                        <th className="px-5 py-3.5 text-right">Action</th>
+                        <th className="px-5 py-3.5">{t("buyer.txn_id_crop")}</th>
+                        <th className="px-5 py-3.5">{t("fpo.buyer")}</th>
+                        <th className="px-5 py-3.5 text-right">{t("buyer.quantity")}</th>
+                        <th className="px-5 py-3.5 text-right">{t("buyer.agreed_price")}</th>
+                        <th className="px-5 py-3.5 text-right">{t("fpo.total_amount")}</th>
+                        <th className="px-5 py-3.5 text-center">{t("buyer.payment_status")}</th>
+                        <th className="px-5 py-3.5 text-center">{t("buyer.txn_status")}</th>
+                        <th className="px-5 py-3.5 text-right">{t('dashboard.table_action')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
                       {transactions.map(txn => (
                         <tr key={txn.id} className="hover:bg-surface-bg/70 transition-colors">
                           <td className="px-5 py-4">
-                            <div className="font-bold text-text-primary">{txn.crop_name}</div>
+                            <div className="font-bold text-text-primary">{translateCrop(txn.crop_name, t)}</div>
                             <div className="text-[11px] font-mono text-text-secondary">#TXN-{txn.id} • {txn.quality_grade}</div>
                           </td>
-                          <td className="px-5 py-4 font-semibold text-text-primary">{txn.buyer_name}</td>
-                          <td className="px-5 py-4 text-right font-medium">{txn.quantity_quintals} qtl</td>
+                          <td className="px-5 py-4 font-semibold text-text-primary">{translateRole(txn.buyer_name, t)}</td>
+                          <td className="px-5 py-4 text-right font-medium">{txn.quantity_quintals} {t("units.qtl")}</td>
                           <td className="px-5 py-4 text-right">₹{txn.agreed_price_per_quintal.toLocaleString('en-IN')}</td>
                           <td className="px-5 py-4 text-right font-bold text-agrigreen-900">₹{txn.total_amount.toLocaleString('en-IN')}</td>
                           <td className="px-5 py-4 text-center">
@@ -604,7 +593,7 @@ export default function FPODashboard() {
                               txn.payment_status === 'Processing' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                               'bg-amber-50 text-amber-700 border-amber-200'
                             }`}>
-                              {txn.payment_status}
+                              {translateStatus(txn.payment_status, t)}
                             </span>
                           </td>
                           <td className="px-5 py-4 text-center">
@@ -612,7 +601,7 @@ export default function FPODashboard() {
                               txn.transaction_status === 'Completed' ? 'bg-agrigreen-500/10 text-agrigreen-700 border-agrigreen-500/30' :
                               'bg-surface-subtle text-text-primary border-border-subtle'
                             }`}>
-                              {txn.transaction_status}
+                              {translateStatus(txn.transaction_status, t)}
                             </span>
                           </td>
                           <td className="px-5 py-4 text-right">
@@ -622,7 +611,7 @@ export default function FPODashboard() {
                               className="inline-flex items-center gap-1 text-xs font-bold text-agrigreen-700 hover:text-agrigreen-900 bg-agrigreen-500/10 hover:bg-agrigreen-500/20 px-3 py-1.5 rounded-lg border border-agrigreen-500/30/60 transition-colors"
                             >
                               <Eye className="w-3.5 h-3.5" />
-                              <span>View Details</span>
+                              <span>{t("buyer.view_details")}</span>
                             </button>
                           </td>
                         </tr>
@@ -661,8 +650,8 @@ export default function FPODashboard() {
                   <Plus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-text-primary text-base">Create Produce Lot</h3>
-                  <p className="text-xs text-text-secondary">List aggregated produce for buyers</p>
+                  <h3 className="font-bold text-text-primary text-base">{t("fpo.create_lot_btn")}</h3>
+                  <p className="text-xs text-text-secondary">{t("fpo.list_aggregated")}</p>
                 </div>
               </div>
               <button 
@@ -679,7 +668,7 @@ export default function FPODashboard() {
               {formSuccess ? (
                 <div className="py-8 text-center space-y-3">
                   <CheckCircle2 className="w-12 h-12 text-agrigreen-500 mx-auto" />
-                  <h4 className="text-lg font-bold text-text-primary">Produce Lot Created!</h4>
+                  <h4 className="text-lg font-bold text-text-primary">{t("fpo.lot_created")}</h4>
                   <p className="text-sm text-text-secondary">{formSuccess}</p>
                 </div>
               ) : (
@@ -687,9 +676,7 @@ export default function FPODashboard() {
                   
                   {/* Crop Select */}
                   <div>
-                    <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-                      Crop
-                    </label>
+                    <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">{t("buyer.crop")}</label>
                     <select
                       value={cropId}
                       onChange={(e) => setCropId(e.target.value)}
@@ -698,7 +685,7 @@ export default function FPODashboard() {
                       <option value="">[ Select Crop ]</option>
                       {crops.map((c) => (
                         <option key={c.id} value={c.id}>
-                          {c.name}
+                          {t(`crops.${c.name.toLowerCase()}`)}
                         </option>
                       ))}
                     </select>
@@ -707,9 +694,7 @@ export default function FPODashboard() {
                   {/* Quantity & Quality */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-                        Quantity
-                      </label>
+                      <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">{t("buyer.quantity")}</label>
                       <div className="relative">
                         <input
                           type="number"
@@ -718,9 +703,7 @@ export default function FPODashboard() {
                           onChange={(e) => setQuantityKg(e.target.value)}
                           className="w-full bg-surface-bg border border-border-subtle rounded-xl px-3.5 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none pr-10"
                         />
-                        <span className="absolute right-3 top-2.5 text-xs text-text-secondary font-medium">
-                          kg
-                        </span>
+                        <span className="absolute right-3 top-2.5 text-xs text-text-secondary font-medium">{t("fpo.kg_unit")}</span>
                       </div>
                       {quantityKg && !isNaN(parseFloat(quantityKg)) && parseFloat(quantityKg) > 0 && (
                         <span className="text-[11px] text-text-secondary mt-1 block">
@@ -730,27 +713,23 @@ export default function FPODashboard() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-                        Quality Grade
-                      </label>
+                      <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">{t("dashboard.quality_grade")}</label>
                       <select
                         value={qualityGrade}
                         onChange={(e) => setQualityGrade(e.target.value)}
                         className="w-full bg-surface-bg border border-border-subtle rounded-xl px-3.5 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none"
                       >
-                        <option value="Grade A">Grade A</option>
-                        <option value="Grade B">Grade B</option>
-                        <option value="Grade C">Grade C</option>
-                        <option value="Premium">Premium</option>
+                        <option value="Grade A">{t("quality.Grade A")}</option>
+                        <option value="Grade B">{t("quality.Grade B")}</option>
+                        <option value="Grade C">{t("quality.Grade C")}</option>
+                        <option value="Premium">{t("quality.Premium")}</option>
                       </select>
                     </div>
                   </div>
 
                   {/* Expected Price */}
                   <div>
-                    <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-                      Expected Price
-                    </label>
+                    <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">{t("buyer.expected_price")}</label>
                     <div className="relative">
                       <span className="absolute left-3.5 top-2.5 text-sm text-text-secondary font-bold">
                         ₹
@@ -763,16 +742,14 @@ export default function FPODashboard() {
                         className="w-full bg-surface-bg border border-border-subtle rounded-xl pl-8 pr-24 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none"
                       />
                       <span className="absolute right-3 top-2.5 text-xs text-text-secondary font-medium">
-                        / quintal
+                        / {t("units.quintal")}
                       </span>
                     </div>
                   </div>
 
                   {/* Market / Location */}
                   <div>
-                    <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-                      Market / Location
-                    </label>
+                    <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">{t("common.location")}</label>
                     <select
                       value={marketId}
                       onChange={(e) => setMarketId(e.target.value)}
@@ -790,9 +767,7 @@ export default function FPODashboard() {
                   {/* Availability Badge */}
                   <div className="flex items-center justify-between bg-agrigreen-500/10 p-3 rounded-xl border border-agrigreen-500/30">
                     <span className="text-xs font-medium text-agrigreen-900">Availability Status:</span>
-                    <span className="text-xs font-bold text-agrigreen-700 bg-surface-card px-2.5 py-0.5 rounded border border-emerald-300">
-                      Available
-                    </span>
+                    <span className="text-xs font-bold text-agrigreen-700 bg-surface-card px-2.5 py-0.5 rounded border border-emerald-300">{t("fpo.available")}</span>
                   </div>
 
                   {/* Form Error Feedback */}
@@ -813,10 +788,10 @@ export default function FPODashboard() {
                       {submitting ? (
                         <>
                           <RefreshCw className="w-4 h-4 animate-spin" />
-                          <span>Creating lot...</span>
+                          <span>{t("fpo.creating_lot")}</span>
                         </>
                       ) : (
-                        <span>Create Lot</span>
+                        <span>{t("fpo.create_lot")}</span>
                       )}
                     </button>
                   </div>

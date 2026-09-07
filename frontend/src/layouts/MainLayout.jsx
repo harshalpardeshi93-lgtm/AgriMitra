@@ -47,9 +47,9 @@ export default function MainLayout() {
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
           <div className="flex items-center gap-2">
             <span className="inline-block w-2 h-2 rounded-full bg-agrigreen-500 animate-pulse"></span>
-            <span className="font-semibold text-stone-200">AgriMitra</span>
+            <span className="font-semibold text-stone-200">{t("nav.agrimitra")}</span>
             <span className="text-text-secondary">|</span>
-            <span className="text-text-secondary">AI-Powered Market Intelligence</span>
+            <span className="text-text-secondary">{t("nav.ai_powered")}</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -79,12 +79,8 @@ export default function MainLayout() {
                 <Sprout className="w-5 h-5" />
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-lg text-text-primary tracking-tight leading-none group-hover:text-agrigreen-700 transition-colors">
-                  AgriMitra
-                </span>
-                <span className="text-[10px] text-text-secondary font-medium tracking-wide uppercase mt-0.5">
-                  Market Intelligence
-                </span>
+                <span className="font-bold text-lg text-text-primary tracking-tight leading-none group-hover:text-agrigreen-700 transition-colors">{t("nav.agrimitra")}</span>
+                <span className="text-[10px] text-text-secondary font-medium tracking-wide uppercase mt-0.5">{t("nav.market_intelligence")}</span>
               </div>
             </Link>
 
@@ -237,30 +233,22 @@ export default function MainLayout() {
               to="/"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2.5 rounded-xl text-base font-medium text-text-primary hover:bg-surface-subtle"
-            >
-              Home
-            </Link>
+            >{t("nav.home")}</Link>
             <Link
               to="/farmer"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2.5 rounded-xl text-base font-medium text-text-primary hover:bg-surface-subtle"
-            >
-              Markets
-            </Link>
+            >{t("nav.markets")}</Link>
             <Link
               to="/buyer"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2.5 rounded-xl text-base font-medium text-text-primary hover:bg-surface-subtle"
-            >
-              Buyer Dashboard
-            </Link>
+            >{t("nav.buyer_dashboard")}</Link>
             <Link
               to="/fpo"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2.5 rounded-xl text-base font-medium text-text-primary hover:bg-surface-subtle"
-            >
-              FPO Hub
-            </Link>
+            >{t("nav.fpo_hub")}</Link>
 
             <div className="pt-3 border-t border-border-subtle mt-2 space-y-2">
               {user ? (
@@ -277,7 +265,7 @@ export default function MainLayout() {
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-stone-900 text-white font-medium text-sm"
                   >
                     <LogOut className="w-4 h-4 text-red-400" />
-                    <span>Logout</span>
+                    <span>{t("nav.logout")}</span>
                   </button>
                 </div>
               ) : (
@@ -287,7 +275,7 @@ export default function MainLayout() {
                     className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-surface-subtle text-text-primary text-sm font-semibold"
                   >
                     <LogIn className="w-4 h-4" />
-                    <span>Login</span>
+                    <span>{t("nav.login")}</span>
                   </Link>
                   <Link
                     to="/login"
@@ -295,7 +283,7 @@ export default function MainLayout() {
                     className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-agrigreen-700 text-white text-sm font-semibold"
                   >
                     <Sparkles className="w-4 h-4 text-amber-500" />
-                    <span>Try Demo</span>
+                    <span>{t("nav.try_demo")}</span>
                   </Link>
                 </div>
               )}
@@ -318,37 +306,33 @@ export default function MainLayout() {
                 <div className="w-7 h-7 rounded bg-agrigreen-700 text-white flex items-center justify-center font-bold">
                   <Sprout className="w-4 h-4" />
                 </div>
-                <span className="font-bold text-white text-base">AgriMitra</span>
+                <span className="font-bold text-white text-base">{t("nav.agrimitra")}</span>
               </div>
-              <p className="text-text-secondary text-xs leading-relaxed">
-                Empowering Indian farmers & FPOs with transparent market price discovery, direct buyer connections, and actionable agricultural intelligence.
-              </p>
+              <p className="text-text-secondary text-xs leading-relaxed">{t("footer.desc")}</p>
             </div>
 
             <div>
-              <h4 className="font-semibold text-white text-xs uppercase tracking-wider mb-3">Portals</h4>
+              <h4 className="font-semibold text-white text-xs uppercase tracking-wider mb-3">{t("footer.portals")}</h4>
               <ul className="space-y-2 text-text-secondary text-xs">
-                <li><Link to="/farmer" className="hover:text-agrigreen-500 transition-colors">Farmer Portal</Link></li>
-                <li><Link to="/buyer" className="hover:text-agrigreen-500 transition-colors">Buyer Dashboard</Link></li>
-                <li><Link to="/fpo" className="hover:text-agrigreen-500 transition-colors">FPO Hub</Link></li>
+                <li><Link to="/farmer" className="hover:text-agrigreen-500 transition-colors">{t("footer.farmer_portal")}</Link></li>
+                <li><Link to="/buyer" className="hover:text-agrigreen-500 transition-colors">{t("nav.buyer_dashboard")}</Link></li>
+                <li><Link to="/fpo" className="hover:text-agrigreen-500 transition-colors">{t("nav.fpo_hub")}</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold text-white text-xs uppercase tracking-wider mb-3">Features</h4>
+              <h4 className="font-semibold text-white text-xs uppercase tracking-wider mb-3">{t("footer.features")}</h4>
               <ul className="space-y-2 text-text-secondary text-xs">
-                <li>APMC Modal Price Comparison</li>
-                <li>AI Sell Advisor</li>
-                <li>Direct Buyer Match & Offers</li>
-                <li>Payment Status Tracking</li>
+                <li>{t("footer.apmc_comparison")}</li>
+                <li>{t("footer.ai_advisor")}</li>
+                <li>{t("footer.direct_match")}</li>
+                <li>{t("footer.payment_tracking")}</li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold text-white text-xs uppercase tracking-wider mb-3">Platform Information</h4>
-              <p className="text-text-secondary text-xs leading-relaxed">
-                SIH Hackathon Prototype. Operates with local seed data and AI-assisted market estimation.
-              </p>
+              <h4 className="font-semibold text-white text-xs uppercase tracking-wider mb-3">{t("footer.platform_info")}</h4>
+              <p className="text-text-secondary text-xs leading-relaxed">{t("footer.prototype_disclaimer")}</p>
               <div className="mt-4 text-[11px] text-text-secondary">
                 © {new Date().getFullYear()} AgriMitra. All rights reserved.
               </div>
