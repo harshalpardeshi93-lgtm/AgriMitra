@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { Sprout, Users, Building2, Store, Menu, X, Activity, LogOut, LogIn, UserPlus, Sparkles, LayoutDashboard } from 'lucide-react';
 import { fetchHealthStatus } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function MainLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -10,6 +11,7 @@ export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
     let isMounted = true;
@@ -96,7 +98,7 @@ export default function MainLayout() {
                     : 'text-text-secondary hover:text-text-primary hover:bg-surface-subtle'
                 }`}
               >
-                Home
+                {t('nav.home')}
               </Link>
 
               <Link
@@ -107,7 +109,7 @@ export default function MainLayout() {
                     : 'text-text-secondary hover:text-text-primary hover:bg-surface-subtle'
                 }`}
               >
-                Markets
+                {t('nav.markets')}
               </Link>
 
               <a
@@ -123,7 +125,7 @@ export default function MainLayout() {
                   }
                 }}
               >
-                How It Works
+                {t('nav.how_it_works')}
               </a>
 
               {/* Role-Specific Portal Links when logged in */}
@@ -138,7 +140,7 @@ export default function MainLayout() {
                     }`}
                   >
                     <LayoutDashboard className="w-4 h-4 text-agrigreen-700" />
-                    <span>Dashboard</span>
+                    <span>{t('nav.dashboard')}</span>
                   </Link>
 
                   {user.role === 'buyer' && (
@@ -146,7 +148,7 @@ export default function MainLayout() {
                       to="/buyer"
                       className="px-3.5 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface-subtle"
                     >
-                      Buyer Portal
+                      {t('nav.buyer_portal')}
                     </Link>
                   )}
 
@@ -155,12 +157,25 @@ export default function MainLayout() {
                       to="/fpo"
                       className="px-3.5 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface-subtle"
                     >
-                      FPO Hub
+                      {t('nav.fpo_hub')}
                     </Link>
                   )}
                 </>
               )}
             </nav>
+
+            {/* Language Switcher */}
+            <div className="hidden md:flex items-center mr-2">
+              <select 
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="bg-surface-subtle border border-border-subtle text-text-primary text-xs rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-agrigreen-500"
+              >
+                <option value="en">English</option>
+                <option value="hi">हिन्दी</option>
+                <option value="mr">मराठी</option>
+              </select>
+            </div>
 
             {/* User Account / Action Buttons */}
             <div className="hidden md:flex items-center gap-3">
@@ -177,7 +192,7 @@ export default function MainLayout() {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    title="Logout"
+                    title={t('nav.logout')}
                     className="p-2 rounded-lg bg-surface-card text-text-secondary hover:text-red-700 hover:bg-red-50 border border-border-subtle transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
@@ -190,14 +205,14 @@ export default function MainLayout() {
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface-subtle text-sm font-semibold transition-colors"
                   >
                     <LogIn className="w-4 h-4 text-text-secondary" />
-                    <span>Login</span>
+                    <span>{t('nav.login')}</span>
                   </Link>
                   <Link
                     to="/login"
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-agrigreen-700 hover:bg-agrigreen-900 text-white text-sm font-semibold transition-all shadow-sm"
                   >
                     <Sparkles className="w-4 h-4 text-amber-500" />
-                    <span>Try Demo</span>
+                    <span>{t('nav.try_demo')}</span>
                   </Link>
                 </div>
               )}

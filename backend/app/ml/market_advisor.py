@@ -83,7 +83,8 @@ def generate_market_recommendation(
     market_price_history_map: Dict[str, List[dict]],
     storage_available: bool = False,
     storage_cost: float = None,
-    transport_cost: float = None
+    transport_cost: float = None,
+    weather_data: dict = None
 ) -> Dict[str, Any]:
     """
     Risk-Aware AI Sell Advisor logic with downside risk and volatility.
@@ -289,6 +290,17 @@ def generate_market_recommendation(
             decision_label = "Sell now"
             decision_reason = "Market is stable but potential upside is limited considering costs and risk."
 
+    # Integrate Weather Risk (Rule: Weather is a SUPPORTING risk signal, not a direct price predictor)
+    if weather_data and weather_data.get("risk_level") == "HIGH":
+        if decision == "WAIT":
+            decision = "PARTIAL_SELL"
+            decision_label = "Sell part now"
+            decision_reason = "Potential upside is meaningful, but severe weather (e.g., heavy rainfall) may increase transport and selling uncertainty. Sell partially to manage weather risk."
+        elif decision == "PARTIAL_SELL":
+            decision = "SELL_NOW"
+            decision_label = "Sell now"
+            decision_reason = "Recent volatility and high weather risk make waiting too risky. Secure value now before transport becomes difficult."
+
     # Map decision to legacy recommended_window for backward compatibility
     if decision == "WAIT":
         recommended_window = "Consider waiting"
@@ -311,9 +323,16 @@ def generate_market_recommendation(
     if not arrival_avail:
         reasons.append("Arrival quantity (supply volume) is currently unavailable. Proceed with caution.")
         
+    if weather_data and weather_data.get("risk_level") == "HIGH":
+        reasons.append("High weather risk may impact operations.")
+
     # Clean up history object from rankings to avoid serializing massive lists
     for r in rankings:
         r.pop("history", None)
+        
+    # Safely extract weather fields
+    w_data = weather_data or {}
+
 
     return {
         "recommended_market": top_market["market_name"],
@@ -349,5 +368,13 @@ def generate_market_recommendation(
         "warnings": warnings,
         "market_behavior_signal": sys_risk_data["market_behavior_signal"],
         "market_systemic_risk": sys_risk_data["market_systemic_risk"],
-        "wait_concentration": sys_risk_data["wait_concentration"]
+        "wait_concentration": sys_risk_data["wait_concentration"],
+        
+        # Phase 4 Weather Risk Fields
+        "weather_data_available": w_data.get("available", False),
+        "weather_risk_level": w_data.get("risk_level", "UNAVAILABLE"),
+        "weather_condition": w_data.get("condition"),
+        "weather_warning": w_data.get("warning"),
+        "weather_source": w_data.get("source", "IMD"),
+        "weather_fetched_at": w_data.get("fetched_at")
     }

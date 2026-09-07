@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { 
   Sprout, MapPin, Scale, Award, Search, AlertCircle, Info, 
   ArrowUpDown, Sparkles, TrendingUp, Calendar, CheckCircle2, 
-  ShieldCheck, ArrowRight, UserCheck, Package, ShoppingBag, Eye, RefreshCw, Clock, IndianRupee, Plus
+  ShieldCheck, ArrowRight, UserCheck, Package, ShoppingBag, Eye, RefreshCw, Clock, IndianRupee, Plus, CloudRain
 } from 'lucide-react';
 import { 
   getCrops, getMarkets, getMarketPrices, getTrends, 
@@ -11,10 +11,12 @@ import {
 } from '../services/api';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import TransactionDetailModal from '../components/TransactionDetailModal';
 
 export default function FarmerDashboard() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const effectiveUserId = user?.id;
   const navigate = useNavigate();
 
@@ -45,9 +47,9 @@ export default function FarmerDashboard() {
   // Time greeting helper
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return t('dashboard.greeting_morning');
+    if (hour < 17) return t('dashboard.greeting_afternoon');
+    return t('dashboard.greeting_evening');
   };
 
   // Initial Data Load
@@ -147,17 +149,17 @@ export default function FarmerDashboard() {
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-agrigreen-900 bg-agrigreen-500/20 px-2.5 py-1 rounded border border-emerald-300">
-              Farmer Decision Hub
+              {t('dashboard.farmer_hub')}
             </span>
             <span className="text-xs font-medium text-text-secondary bg-surface-subtle px-2.5 py-1 rounded border border-border-subtle">
-              AI Price Intelligence
+              {t('dashboard.ai_intelligence')}
             </span>
           </div>
           <h1 className="text-3xl font-bold text-text-primary mt-2">
-            {getGreeting()}, {user?.name || 'Farmer'}
+            {getGreeting()}, {user?.name || t('auth.farmer')}
           </h1>
           <p className="text-text-secondary text-sm mt-1">
-            Make a better selling decision today.
+            {t('dashboard.subtitle')}
           </p>
         </div>
 
@@ -167,7 +169,7 @@ export default function FarmerDashboard() {
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-agrigreen-700 hover:bg-agrigreen-900 text-white rounded-xl text-xs font-bold transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            <span>Create Produce Lot</span>
+            <span>{t('dashboard.create_produce_lot')}</span>
           </Link>
         </div>
       </div>
@@ -176,18 +178,18 @@ export default function FarmerDashboard() {
       <div className="bg-surface-card rounded-3xl border border-border-subtle p-6 shadow-sm">
         <h2 className="text-base font-bold text-text-primary mb-4 flex items-center gap-2">
           <Search className="w-5 h-5 text-agrigreen-700" />
-          <span>Find Your Best Market</span>
+          <span>{t('dashboard.find_best_market')}</span>
         </h2>
 
         {loadingCrops ? (
-          <div className="py-6 text-center text-text-secondary font-medium">Loading crop options...</div>
+          <div className="py-6 text-center text-text-secondary font-medium">{t('dashboard.loading_crops')}</div>
         ) : (
           <form onSubmit={handleFormSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
             
             {/* Crop Select */}
             <div>
               <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-                Crop
+                {t('dashboard.crop')}
               </label>
               <select
                 value={selectedCropId}
@@ -203,7 +205,7 @@ export default function FarmerDashboard() {
             {/* Quantity */}
             <div>
               <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-                Quantity (kg)
+                {t('dashboard.quantity')}
               </label>
               <input
                 type="number"
@@ -217,14 +219,14 @@ export default function FarmerDashboard() {
             {/* Location */}
             <div>
               <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-                Location
+                {t('dashboard.location')}
               </label>
               <select
                 value={selectedLocation}
                 onChange={(e) => setSelectedLocation(e.target.value)}
                 className="w-full bg-surface-bg border border-border-subtle rounded-xl px-3.5 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none"
               >
-                <option value="All">All Locations</option>
+                <option value="All">{t('dashboard.all_locations')}</option>
                 {markets.map(m => (
                   <option key={m.id} value={m.name}>{m.name} ({m.district})</option>
                 ))}
@@ -234,7 +236,7 @@ export default function FarmerDashboard() {
             {/* Quality */}
             <div>
               <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-                Quality Grade
+                {t('dashboard.quality_grade')}
               </label>
               <select
                 value={qualityGrade}
@@ -258,11 +260,11 @@ export default function FarmerDashboard() {
                 {loadingAnalysis ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Analyzing...</span>
+                    <span>{t('dashboard.analyzing')}</span>
                   </>
                 ) : (
                   <>
-                    <span>Find Best Market</span>
+                    <span>{t('dashboard.find_best_market')}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -302,7 +304,7 @@ export default function FarmerDashboard() {
             
             {/* Top Market Name & Price */}
             <div className="space-y-3 lg:border-r lg:border-teal-700/80 pr-4">
-              <div className="text-xs font-bold uppercase tracking-wider text-teal-300">Recommended Market</div>
+              <div className="text-xs font-bold uppercase tracking-wider text-teal-300">{t('advisor.recommended_market')}</div>
               <div className="text-3xl font-extrabold text-white">{advisorData.recommended_market}</div>
               <div className="text-xs text-teal-200 flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5 text-teal-400" />
@@ -314,17 +316,17 @@ export default function FarmerDashboard() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:col-span-2">
               
               <div className="bg-teal-950/60 p-4 rounded-2xl border border-teal-700/40">
-                <span className="text-[11px] font-semibold text-teal-300 uppercase block">Expected Price</span>
+                <span className="text-[11px] font-semibold text-teal-300 uppercase block">{t('advisor.expected_price')}</span>
                 {advisorData.expected_price != null ? (
                   <div className="text-2xl font-bold text-white mt-1">₹{advisorData.expected_price.toLocaleString('en-IN')}</div>
                 ) : (
                   <div className="text-2xl font-bold text-white mt-1">Price unavailable</div>
                 )}
-                <span className="text-[10px] text-teal-400 font-medium">per quintal</span>
+                <span className="text-[10px] text-teal-400 font-medium">{t('dashboard.per_qtl')}</span>
               </div>
 
               <div className="bg-teal-950/60 p-4 rounded-2xl border border-teal-700/40">
-                <span className="text-[11px] font-semibold text-teal-300 uppercase block">Current Price</span>
+                <span className="text-[11px] font-semibold text-teal-300 uppercase block">{t('advisor.current_price')}</span>
                 {advisorData.current_modal_price != null ? (
                   <div className="text-xl font-bold text-teal-100 mt-1">₹{advisorData.current_modal_price.toLocaleString('en-IN')}</div>
                 ) : (
@@ -332,7 +334,7 @@ export default function FarmerDashboard() {
                 )}
                 {advisorData.expected_gain != null ? (
                   <span className="text-sm font-semibold text-teal-200 block">
-                    {advisorData.expected_gain >= 0 ? `+₹${advisorData.expected_gain} expected` : `₹${advisorData.expected_gain} expected`}
+                    {advisorData.expected_gain >= 0 ? `+₹${advisorData.expected_gain} ${t('advisor.expected_gain')}` : `₹${advisorData.expected_gain} ${t('advisor.expected_gain')}`}
                   </span>
                 ) : null}
               </div>
@@ -360,7 +362,7 @@ export default function FarmerDashboard() {
                       {advisorData.decision === "WAIT" && <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>}
                       {(advisorData.decision === "LOW_CONFIDENCE" || advisorData.decision === "INSUFFICIENT_DATA") && <span className="w-2.5 h-2.5 rounded-full bg-stone-500"></span>}
                       <span className="font-bold text-amber-300 text-sm">
-                        {advisorData.decision_label || "Recommendation"}
+                        {t(`advisor.decision.${advisorData.decision}`) || t('advisor.recommendation')}
                       </span>
                     </div>
                     <p className="text-sm">
@@ -369,11 +371,43 @@ export default function FarmerDashboard() {
                   </>
                 ) : (
                   <>
-                    <span className="font-bold text-amber-300">AI Sell Advisor Recommendation: </span>
+                    <span className="font-bold text-amber-300">{t('advisor.ai_recommendation')} </span>
                     "{advisorData.key_reasons.join(' ')}"
                   </>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Phase 4: Weather Risk UI */}
+          {advisorData.weather_data_available && (
+            <div className="bg-teal-950/40 p-4 rounded-2xl border border-teal-700/30 text-xs text-teal-100 mt-4 flex items-start gap-3">
+              <CloudRain className={`w-5 h-5 shrink-0 mt-0.5 ${advisorData.weather_risk_level === 'HIGH' ? 'text-red-400' : advisorData.weather_risk_level === 'MEDIUM' ? 'text-yellow-400' : 'text-blue-400'}`} />
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-teal-200">
+                    {t('advisor.weather_risk')}: {t(`advisor.weather_risk_level_${advisorData.weather_risk_level}`) || advisorData.weather_risk_level}
+                  </span>
+                  <span className="text-[10px] text-teal-500 font-medium">Source: {advisorData.weather_source}</span>
+                </div>
+                {advisorData.weather_condition && (
+                  <p className="text-sm text-teal-300">
+                    {t('advisor.weather_condition')}: {advisorData.weather_condition}
+                  </p>
+                )}
+                {advisorData.weather_warning && (
+                  <p className="text-sm text-red-300 mt-1">
+                    {advisorData.weather_warning}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {!advisorData.weather_data_available && (
+            <div className="bg-teal-950/20 p-3 rounded-2xl border border-teal-700/20 text-[11px] text-teal-500 mt-4 flex items-center gap-2">
+              <CloudRain className="w-3.5 h-3.5 opacity-50" />
+              <span>{t('advisor.weather_unavailable')}</span>
             </div>
           )}
 
@@ -385,7 +419,7 @@ export default function FarmerDashboard() {
         <div className="bg-amber-100/50 border border-amber-300 p-4 rounded-2xl shadow-sm space-y-2 mt-4 text-sm text-amber-900">
           <div className="flex items-center gap-2 font-bold text-amber-800">
             <AlertCircle className="w-5 h-5" />
-            <span>Advisory Warnings</span>
+            <span>{t('advisor.advisory_warnings')}</span>
           </div>
           <ul className="list-disc list-inside space-y-1 ml-1">
             {advisorData.warnings.map((warn, idx) => (
@@ -401,21 +435,21 @@ export default function FarmerDashboard() {
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
               <Scale className="w-5 h-5 text-agrigreen-700" />
-              <span>Compare Nearby Markets</span>
+              <span>{t('dashboard.compare_markets')}</span>
             </h3>
-            <span className="text-xs text-text-secondary">Sorted by expected price & suitability</span>
+            <span className="text-xs text-text-secondary">{t('dashboard.sorted_by')}</span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-text-primary">
               <thead className="bg-surface-bg text-text-secondary uppercase font-semibold text-[11px] border-b border-border-subtle">
                 <tr>
-                  <th className="px-4 py-3">Market</th>
-                  <th className="px-4 py-3 text-right">Current Price</th>
-                  <th className="px-4 py-3 text-right">Expected (5D)</th>
-                  <th className="px-4 py-3 text-center">Trend</th>
-                  <th className="px-4 py-3 text-right">Arrivals</th>
-                  <th className="px-4 py-3 text-center">Status</th>
+                  <th className="px-4 py-3">{t('dashboard.table_market')}</th>
+                  <th className="px-4 py-3 text-right">{t('dashboard.table_current_price')}</th>
+                  <th className="px-4 py-3 text-right">{t('dashboard.table_expected_price')}</th>
+                  <th className="px-4 py-3 text-center">{t('dashboard.table_trend')}</th>
+                  <th className="px-4 py-3 text-right">{t('dashboard.table_arrivals')}</th>
+                  <th className="px-4 py-3 text-center">{t('dashboard.table_status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -439,7 +473,7 @@ export default function FarmerDashboard() {
                           m.trend_direction === 'Downward' ? 'bg-red-100 text-red-800' :
                           'bg-surface-subtle text-text-primary'
                         }`}>
-                          {m.trend_direction === 'Upward' ? '↑ Rising' : m.trend_direction === 'Downward' ? '↓ Falling' : '→ Stable'}
+                          {m.trend_direction === 'Upward' ? t('dashboard.rising') : m.trend_direction === 'Downward' ? t('dashboard.falling') : t('dashboard.stable')}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-right text-text-secondary">
@@ -565,7 +599,7 @@ export default function FarmerDashboard() {
             onClick={scrollToBuyers}
             className="w-full py-3.5 bg-agrigreen-700 hover:bg-agrigreen-900 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm"
           >
-            <span>See Buyers Looking For Produce</span>
+            <span>{t('dashboard.matched_buyers')}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -578,9 +612,9 @@ export default function FarmerDashboard() {
           <div>
             <h3 className="font-bold text-text-primary text-lg flex items-center gap-2">
               <UserCheck className="w-5 h-5 text-agrigreen-700" />
-              Buyers Looking for Your Produce
+              {t('dashboard.matched_buyers')}
             </h3>
-            <p className="text-xs text-text-secondary">Verified enterprise buyers actively procuring in your region</p>
+            <p className="text-xs text-text-secondary">{t('dashboard.marketplace_subtitle')}</p>
           </div>
           <span className="text-xs font-medium text-agrigreen-700 bg-agrigreen-500/10 px-3 py-1 rounded-full border border-agrigreen-500/30">
             {buyersList.length || 3} Verified Buyers
@@ -632,7 +666,7 @@ export default function FarmerDashboard() {
                 onClick={() => navigate('/fpo')}
                 className="w-full py-2 bg-agrigreen-700 hover:bg-agrigreen-900 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
               >
-                <span>Create Lot for Buyer</span>
+                <span>{t('dashboard.sell_directly')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -648,7 +682,7 @@ export default function FarmerDashboard() {
           <div className="flex justify-between items-center border-b border-border-subtle pb-3">
             <h3 className="font-bold text-text-primary text-base flex items-center gap-2">
               <ShoppingBag className="w-5 h-5 text-agrigreen-700" />
-              My Produce Lots
+              {t('dashboard.my_lots')}
             </h3>
             <Link to="/fpo" className="text-xs font-bold text-agrigreen-700 hover:underline flex items-center gap-1">
               <span>FPO Hub</span>
@@ -688,7 +722,7 @@ export default function FarmerDashboard() {
           <div className="flex justify-between items-center border-b border-border-subtle pb-3">
             <h3 className="font-bold text-text-primary text-base flex items-center gap-2">
               <Package className="w-5 h-5 text-agrigreen-700" />
-              Recent Sales
+              {t('dashboard.transactions')}
             </h3>
             <Link to="/fpo" className="text-xs font-bold text-agrigreen-700 hover:underline flex items-center gap-1">
               <span>View All</span>

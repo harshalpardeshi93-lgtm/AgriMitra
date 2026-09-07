@@ -73,6 +73,16 @@ def get_ai_advisor_recommendation(
                     
             market_price_history_map[m.name] = history
 
+    # Phase 4: Fetch Weather Data for the general area (using first market's location as proxy for prototype)
+    weather_data = None
+    if markets:
+        try:
+            from app.services.weather_service import WeatherService
+            ws = WeatherService()
+            weather_data = ws.get_weather_for_location(district=markets[0].district, state=markets[0].state)
+        except Exception as e:
+            pass
+
     rec = generate_market_recommendation(
         crop_name=crop.name,
         quantity_kg=quantity_kg,
@@ -80,7 +90,8 @@ def get_ai_advisor_recommendation(
         market_price_history_map=market_price_history_map,
         storage_available=storage_available,
         storage_cost=storage_cost,
-        transport_cost=transport_cost
+        transport_cost=transport_cost,
+        weather_data=weather_data
     )
 
     market_rankings = [
@@ -139,5 +150,13 @@ def get_ai_advisor_recommendation(
         warnings=rec.get("warnings", []),
         market_behavior_signal=rec.get("market_behavior_signal", "UNAVAILABLE"),
         market_systemic_risk=rec.get("market_systemic_risk", "UNAVAILABLE"),
-        wait_concentration=rec.get("wait_concentration")
+        wait_concentration=rec.get("wait_concentration"),
+        
+        # Phase 4 Weather Risk Fields
+        weather_data_available=rec.get("weather_data_available", False),
+        weather_risk_level=rec.get("weather_risk_level", "UNAVAILABLE"),
+        weather_condition=rec.get("weather_condition"),
+        weather_warning=rec.get("weather_warning"),
+        weather_source=rec.get("weather_source", "IMD"),
+        weather_fetched_at=rec.get("weather_fetched_at")
     )

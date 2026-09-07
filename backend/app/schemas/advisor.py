@@ -58,4 +58,12 @@ class AdvisorResponse(BaseModel):
     market_behavior_signal: str = "UNAVAILABLE"
     market_systemic_risk: str = "UNAVAILABLE"
     wait_concentration: Optional[float] = None
+    
+    # Phase 4 Weather Risk fields
+    weather_data_available: bool = False
+    weather_risk_level: str = "UNAVAILABLE"
+    weather_condition: Optional[str] = None
+    weather_warning: Optional[str] = None
+    weather_source: str = "IMD"
+    weather_fetched_at: Optional[str] = None
 

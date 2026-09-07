@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Sprout, User, Phone, Lock, MapPin, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -14,6 +15,7 @@ export default function Register() {
   const [submitting, setSubmitting] = useState(false);
 
   const { register } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -67,9 +69,9 @@ export default function Register() {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-agrigreen-700 text-white font-bold text-xl shadow-sm mb-1">
             <Sprout className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-bold text-text-primary">Create Account</h1>
+          <h1 className="text-2xl font-bold text-text-primary">{t('auth.create_account')}</h1>
           <p className="text-sm font-medium text-text-secondary">
-            Join AgriMitra's direct agricultural market network
+            {t('auth.register_subtitle')}
           </p>
         </div>
 
@@ -87,13 +89,13 @@ export default function Register() {
           {/* Role Selector */}
           <div>
             <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-2">
-              Select Your Role
+              {t('auth.select_role')}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: 'farmer', label: 'Farmer' },
-                { id: 'buyer', label: 'Buyer' },
-                { id: 'fpo', label: 'FPO' },
+                { id: 'farmer', label: t('auth.farmer') },
+                { id: 'buyer', label: t('auth.buyer') },
+                { id: 'fpo', label: t('auth.fpo') },
               ].map((r) => (
                 <button
                   key={r.id}
@@ -114,7 +116,7 @@ export default function Register() {
 
           <div>
             <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-              Full Name
+              {t('auth.full_name')}
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-text-secondary absolute left-3.5 top-3" />
@@ -130,7 +132,7 @@ export default function Register() {
 
           <div>
             <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-              Phone Number
+              {t('auth.phone_number')}
             </label>
             <div className="relative">
               <Phone className="w-4 h-4 text-text-secondary absolute left-3.5 top-3" />
@@ -146,7 +148,7 @@ export default function Register() {
 
           <div>
             <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-              Location / District
+              {t('dashboard.location')}
             </label>
             <div className="relative">
               <MapPin className="w-4 h-4 text-text-secondary absolute left-3.5 top-3" />
@@ -162,7 +164,7 @@ export default function Register() {
 
           <div>
             <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-              Password
+              {t('auth.password')}
             </label>
             <div className="relative">
               <Lock className="w-4 h-4 text-text-secondary absolute left-3.5 top-3" />
@@ -181,7 +183,7 @@ export default function Register() {
             disabled={submitting}
             className="w-full py-3 bg-agrigreen-700 hover:bg-agrigreen-900 text-white font-bold text-sm rounded-xl shadow-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {submitting ? 'Creating Account...' : 'Create Account'}
+            {submitting ? t('auth.registering') : t('auth.register_button')}
             <ArrowRight className="w-4 h-4" />
           </button>
 
@@ -189,9 +191,9 @@ export default function Register() {
 
         {/* Link to Login */}
         <div className="text-center pt-2 text-xs text-text-secondary">
-          Already have an account?{' '}
+          {t('auth.already_have_account')}{' '}
           <Link to="/login" className="font-bold text-agrigreen-700 hover:underline">
-            Login
+            {t('auth.login_here')}
           </Link>
         </div>
 

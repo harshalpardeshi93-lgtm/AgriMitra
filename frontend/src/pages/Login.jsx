@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Sprout, Phone, Lock, ArrowRight, AlertCircle, Sparkles, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { DEMO_USERS } from '../config/demoConfig';
 
 export default function Login() {
@@ -11,6 +12,7 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
 
   const { login } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -81,7 +83,7 @@ export default function Login() {
           </div>
           <h1 className="text-2xl font-bold text-text-primary">AgriMitra</h1>
           <p className="text-sm font-medium text-text-secondary">
-            Know the price. Find the buyer. Sell smarter.
+            {t('auth.login_to_account')}
           </p>
         </div>
 
@@ -98,13 +100,13 @@ export default function Login() {
           
           <div>
             <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-              Phone Number
+              {t('auth.phone_number')}
             </label>
             <div className="relative">
               <Phone className="w-4 h-4 text-text-secondary absolute left-3.5 top-3" />
               <input
                 type="tel"
-                placeholder="e.g. 9876543210"
+                placeholder={t('auth.phone_placeholder')}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full bg-surface-bg border border-border-subtle rounded-xl pl-10 pr-4 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none"
@@ -114,13 +116,13 @@ export default function Login() {
 
           <div>
             <label className="block text-xs font-semibold uppercase text-text-secondary tracking-wider mb-1.5">
-              Password
+              {t('auth.password')}
             </label>
             <div className="relative">
               <Lock className="w-4 h-4 text-text-secondary absolute left-3.5 top-3" />
               <input
                 type="password"
-                placeholder="••••••••"
+                placeholder={t('auth.password_placeholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-surface-bg border border-border-subtle rounded-xl pl-10 pr-4 py-2.5 text-text-primary text-sm focus:ring-2 focus:ring-emerald-700 outline-none"
@@ -133,7 +135,7 @@ export default function Login() {
             disabled={submitting}
             className="w-full py-3 bg-agrigreen-700 hover:bg-agrigreen-900 text-white font-bold text-sm rounded-xl shadow-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {submitting ? 'Signing in...' : 'Login'}
+            {submitting ? t('auth.logging_in') : t('auth.login_button')}
             <ArrowRight className="w-4 h-4" />
           </button>
 
@@ -144,7 +146,7 @@ export default function Login() {
           <div className="flex items-center justify-between text-xs text-text-secondary font-semibold">
             <span className="flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              Quick Hackathon Demo Login
+              {t('auth.demo_credentials')}
             </span>
             <span className="text-[10px] text-text-secondary font-normal">1-Click</span>
           </div>
@@ -158,7 +160,7 @@ export default function Login() {
                 className="py-2 px-2 rounded-xl bg-surface-subtle hover:bg-agrigreen-500/10 hover:text-agrigreen-700 hover:border-emerald-300 border border-border-subtle text-text-primary text-xs font-semibold transition-all flex flex-col items-center justify-center text-center gap-0.5"
               >
                 <UserCheck className="w-3.5 h-3.5 text-agrigreen-700" />
-                <span className="capitalize">{demo.role}</span>
+                <span className="capitalize">{t(`auth.${demo.role}`) || demo.role}</span>
               </button>
             ))}
           </div>
@@ -166,9 +168,9 @@ export default function Login() {
 
         {/* Link to Register */}
         <div className="text-center pt-2 text-xs text-text-secondary">
-          Don't have an account?{' '}
+          {t('auth.dont_have_account')}{' '}
           <Link to="/register" className="font-bold text-agrigreen-700 hover:underline">
-            Create account
+            {t('auth.register_here')}
           </Link>
         </div>
 
