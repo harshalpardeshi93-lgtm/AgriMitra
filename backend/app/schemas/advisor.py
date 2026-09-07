@@ -11,8 +11,10 @@ class MarketRankingItem(BaseModel):
     expected_gain_pct: float
     trend_direction: str
     price_change_pct: float
-    arrival_quantity: float
+    arrival_quantity: Optional[float] = None
     composite_score: float
+    freshness: str = "Fallback"
+    source_name: str = "AgriMitra Database"
 
 class AdvisorResponse(BaseModel):
     crop_id: int
@@ -33,3 +35,27 @@ class AdvisorResponse(BaseModel):
     key_reasons: List[str]
     market_rankings: List[MarketRankingItem]
     data_disclaimer: str = "Market insights are based on structured prototype data and are designed for integration with government/open-data sources."
+    
+    # New Phase 2 Risk-Aware fields
+    decision: Optional[str] = None
+    decision_label: Optional[str] = None
+    decision_reason: Optional[str] = None
+    price_volatility: Optional[float] = None
+    volatility_level: Optional[str] = None
+    downside_risk_score: Optional[float] = None
+    risk_level: Optional[str] = None
+    arrival_data_available: bool = False
+    arrival_signal: Optional[str] = None
+    storage_available: bool = False
+    storage_cost: Optional[float] = None
+    transport_cost: Optional[float] = None
+    recommended_sell_quantity: Optional[float] = None
+    recommended_hold_quantity: Optional[float] = None
+    data_freshness: str = "Fallback"
+    warnings: List[str] = []
+    
+    # Herd-behavior tracking fields
+    market_behavior_signal: str = "UNAVAILABLE"
+    market_systemic_risk: str = "UNAVAILABLE"
+    wait_concentration: Optional[float] = None
+

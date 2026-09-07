@@ -6,11 +6,16 @@ from app.models.market import Market
 from app.ml.market_advisor import generate_market_recommendation
 from app.schemas.advisor import AdvisorResponse, MarketRankingItem
 
+from app.services.price_service import get_market_prices
+
 def get_ai_advisor_recommendation(
     db: Session,
     crop_id: int,
     quantity_kg: float = 500.0,
-    quality_grade: str = "Grade A"
+    quality_grade: str = "Grade A",
+    storage_available: bool = False,
+    storage_cost: Optional[float] = None,
+    transport_cost: Optional[float] = None
 ) -> Optional[AdvisorResponse]:
     crop = db.query(Crop).filter(Crop.id == crop_id).first()
     if not crop:
@@ -18,6 +23,13 @@ def get_ai_advisor_recommendation(
 
     markets = db.query(Market).all()
     market_price_history_map = {}
+    
+    # Get the merged latest prices (live over fallback) from price_service
+    latest_prices_responses = get_market_prices(db, crop_id=crop_id)
+    latest_price_map = {
+        f"{r.market_name}_{r.district}_{r.state}".lower(): r
+        for r in latest_prices_responses
+    }
 
     for m in markets:
         prices = (
@@ -27,22 +39,48 @@ def get_ai_advisor_recommendation(
             .all()
         )
         if prices:
-            market_price_history_map[m.name] = [
+            history = [
                 {
                     "date": p.date,
                     "modal_price": p.modal_price,
                     "arrival_quantity": p.arrival_quantity,
                     "district": m.district,
-                    "state": m.state
+                    "state": m.state,
+                    "freshness": "Fallback",
+                    "source_name": "AgriMitra Database"
                 }
                 for p in prices
             ]
+            
+            # Check if we have merged live data for this market
+            key = f"{m.name}_{m.district}_{m.state}".lower()
+            if key in latest_price_map:
+                latest = latest_price_map[key]
+                # If the live date is the same as the last DB date, replace it; else append
+                live_record = {
+                    "date": latest.date,
+                    "modal_price": latest.modal_price,
+                    "arrival_quantity": latest.arrival_quantity,
+                    "district": latest.district,
+                    "state": latest.state,
+                    "freshness": latest.freshness,
+                    "source_name": latest.source_name
+                }
+                if history and history[-1]["date"] == latest.date:
+                    history[-1] = live_record
+                else:
+                    history.append(live_record)
+                    
+            market_price_history_map[m.name] = history
 
     rec = generate_market_recommendation(
         crop_name=crop.name,
         quantity_kg=quantity_kg,
         quality_grade=quality_grade,
-        market_price_history_map=market_price_history_map
+        market_price_history_map=market_price_history_map,
+        storage_available=storage_available,
+        storage_cost=storage_cost,
+        transport_cost=transport_cost
     )
 
     market_rankings = [
@@ -57,7 +95,9 @@ def get_ai_advisor_recommendation(
             trend_direction=item["trend_direction"],
             price_change_pct=item["price_change_pct"],
             arrival_quantity=item["arrival_quantity"],
-            composite_score=item["composite_score"]
+            composite_score=item["composite_score"],
+            freshness=item.get("freshness", "Fallback"),
+            source_name=item.get("source_name", "AgriMitra Database")
         )
         for item in rec.get("market_rankings", [])
     ]
@@ -80,5 +120,24 @@ def get_ai_advisor_recommendation(
         observation_count=rec.get("observation_count", 0),
         key_reasons=rec.get("key_reasons", []),
         market_rankings=market_rankings,
-        data_disclaimer="AI-assisted estimate based on prototype market data."
+        data_disclaimer="AI-assisted estimate based on prototype market data.",
+        decision=rec.get("decision"),
+        decision_label=rec.get("decision_label"),
+        decision_reason=rec.get("decision_reason"),
+        price_volatility=rec.get("price_volatility"),
+        volatility_level=rec.get("volatility_level"),
+        downside_risk_score=rec.get("downside_risk_score"),
+        risk_level=rec.get("risk_level"),
+        arrival_data_available=rec.get("arrival_data_available", False),
+        arrival_signal=rec.get("arrival_signal", "UNAVAILABLE"),
+        storage_available=rec.get("storage_available", False),
+        storage_cost=rec.get("storage_cost"),
+        transport_cost=rec.get("transport_cost"),
+        recommended_sell_quantity=rec.get("recommended_sell_quantity"),
+        recommended_hold_quantity=rec.get("recommended_hold_quantity"),
+        data_freshness=rec.get("data_freshness", "Fallback"),
+        warnings=rec.get("warnings", []),
+        market_behavior_signal=rec.get("market_behavior_signal", "UNAVAILABLE"),
+        market_systemic_risk=rec.get("market_systemic_risk", "UNAVAILABLE"),
+        wait_concentration=rec.get("wait_concentration")
     )

@@ -351,13 +351,47 @@ export default function FarmerDashboard() {
           {advisorData.key_reasons && advisorData.key_reasons.length > 0 && (
             <div className="bg-teal-950/70 p-4 rounded-2xl border border-teal-700/40 text-xs text-teal-100 leading-relaxed flex items-start gap-3">
               <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-amber-300">AI Sell Advisor Recommendation: </span>
-                "{advisorData.key_reasons.join(' ')}"
+              <div className="flex-1">
+                {advisorData.decision ? (
+                  <>
+                    <div className="flex items-center gap-2 mb-1">
+                      {advisorData.decision === "SELL_NOW" && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>}
+                      {advisorData.decision === "PARTIAL_SELL" && <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>}
+                      {advisorData.decision === "WAIT" && <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>}
+                      {(advisorData.decision === "LOW_CONFIDENCE" || advisorData.decision === "INSUFFICIENT_DATA") && <span className="w-2.5 h-2.5 rounded-full bg-stone-500"></span>}
+                      <span className="font-bold text-amber-300 text-sm">
+                        {advisorData.decision_label || "Recommendation"}
+                      </span>
+                    </div>
+                    <p className="text-sm">
+                      {advisorData.decision_reason || advisorData.key_reasons.join(' ')}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-bold text-amber-300">AI Sell Advisor Recommendation: </span>
+                    "{advisorData.key_reasons.join(' ')}"
+                  </>
+                )}
               </div>
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* Warnings Block */}
+      {advisorData && advisorData.warnings && advisorData.warnings.length > 0 && (
+        <div className="bg-amber-100/50 border border-amber-300 p-4 rounded-2xl shadow-sm space-y-2 mt-4 text-sm text-amber-900">
+          <div className="flex items-center gap-2 font-bold text-amber-800">
+            <AlertCircle className="w-5 h-5" />
+            <span>Advisory Warnings</span>
+          </div>
+          <ul className="list-disc list-inside space-y-1 ml-1">
+            {advisorData.warnings.map((warn, idx) => (
+              <li key={idx}>{warn}</li>
+            ))}
+          </ul>
         </div>
       )}
 

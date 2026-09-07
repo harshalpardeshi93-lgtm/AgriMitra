@@ -30,7 +30,13 @@ def forecast_prices(prices: list, horizon_days: int = 7) -> Dict[str, Any]:
     df["sma_3"] = df["modal_price"].rolling(window=3, min_periods=1).mean()
     df["arrival_qty"] = df["arrival_quantity"].astype(float)
 
-    X = df[["day_idx", "sma_3", "arrival_qty"]].values
+    # Use arrival_qty only if it doesn't contain NaNs
+    if df["arrival_qty"].isna().any():
+        features = ["day_idx", "sma_3"]
+    else:
+        features = ["day_idx", "sma_3", "arrival_qty"]
+
+    X = df[features].values
     y = df["modal_price"].values
 
     # CHRONOLOGICAL TRAIN / TEST SPLIT (NO RANDOM SHUFFLE)
@@ -80,7 +86,10 @@ def forecast_prices(prices: list, horizon_days: int = 7) -> Dict[str, Any]:
         future_date = (last_date + timedelta(days=i)).strftime("%Y-%m-%d")
         future_idx = last_day_idx + i
         
-        pred_val = full_model.predict([[future_idx, current_sma3, last_arrival]])[0]
+        if "arrival_qty" in features:
+            pred_val = full_model.predict([[future_idx, current_sma3, last_arrival]])[0]
+        else:
+            pred_val = full_model.predict([[future_idx, current_sma3]])[0]
         pred_price = round(float(pred_val), 2)
         
         # Update rolling SMA buffer for multi-step recursive forecasting

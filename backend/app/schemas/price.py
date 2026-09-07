@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
 class MarketPriceResponse(BaseModel):
@@ -12,6 +13,11 @@ class MarketPriceResponse(BaseModel):
     min_price: float
     max_price: float
     modal_price: float
-    arrival_quantity: float
+    arrival_quantity: Optional[float] = None
+    
+    source_name: str = "AgriMitra Database"
+    fetched_at: Optional[str] = None
+    data_timestamp: Optional[str] = None
+    freshness: str = "Fallback"
 
     model_config = ConfigDict(from_attributes=True)
