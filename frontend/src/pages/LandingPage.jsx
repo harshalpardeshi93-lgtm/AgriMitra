@@ -225,7 +225,7 @@ export default function LandingPage() {
 
             {/* Nearby APMC Cards */}
             <div className="lg:col-span-7 space-y-4">
-              <h3 className="text-xs font-bold uppercase text-text-secondary tracking-wider">Nearby APMC Mandi Prices (Prototype Data)</h3>
+              <h3 className="text-xs font-bold uppercase text-text-secondary tracking-wider">{t("landing.nearby_mandi_prices_title")}</h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {DEMO_MARKETS.slice(0, 3).map((m) => (
@@ -435,12 +435,12 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div className="p-4 rounded-2xl bg-stone-800/80 border border-stone-700">
-              <div className="text-3xl font-extrabold text-agrigreen-500">5</div>
+              <div className="text-3xl font-extrabold text-agrigreen-500">{t("landing.multiple")}</div>
               <div className="text-xs text-stone-300 mt-1 font-medium">{t("landing.apmc_mandis")}</div>
             </div>
 
             <div className="p-4 rounded-2xl bg-stone-800/80 border border-stone-700">
-              <div className="text-3xl font-extrabold text-amber-400">8</div>
+              <div className="text-3xl font-extrabold text-amber-400">{t("landing.multiple")}</div>
               <div className="text-xs text-stone-300 mt-1 font-medium">{t("landing.agricultural_crops")}</div>
             </div>
 
@@ -450,7 +450,7 @@ export default function LandingPage() {
             </div>
 
             <div className="p-4 rounded-2xl bg-stone-800/80 border border-stone-700">
-              <div className="text-3xl font-extrabold text-agrigreen-500">100%</div>
+              <div className="text-3xl font-extrabold text-agrigreen-500"><CheckCircle2 className="w-8 h-8 mx-auto" /></div>
               <div className="text-xs text-stone-300 mt-1 font-medium">{t("landing.local_architecture")}</div>
             </div>
           </div>

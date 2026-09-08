@@ -46,12 +46,29 @@ class AdvisorResponse(BaseModel):
     risk_level: Optional[str] = None
     arrival_data_available: bool = False
     arrival_signal: Optional[str] = None
+    arrival_trend: Optional[str] = None
+    supply_pressure: Optional[str] = None
+    economic_uncertainty: bool = False
+    upside_score: Optional[float] = None
+    storage_score: Optional[float] = None
+    transport_cost_status: Optional[str] = None
+    storage_cost_status: Optional[str] = None
     storage_available: bool = False
     storage_cost: Optional[float] = None
     transport_cost: Optional[float] = None
     recommended_sell_quantity: Optional[float] = None
     recommended_hold_quantity: Optional[float] = None
     data_freshness: str = "Fallback"
+
+    expected_upside_pct: Optional[float] = None
+    downside_risk: Optional[str] = None
+    volatility: Optional[str] = None
+    supply_pressure_status: str = "UNAVAILABLE"
+    arrival_quantity: Optional[float] = None
+    storage_feasible: Optional[bool] = None
+    decision_horizon: Optional[str] = None
+    risk_flags: List[str] = []
+
     warnings: List[str] = []
     
     # Herd-behavior tracking fields

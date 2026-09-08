@@ -48,7 +48,7 @@ def test_external_market_service_success(mock_get):
     assert p["state"] == "Maharashtra"
     assert p["modal_price"] == 2300.0
     assert p["arrival_quantity"] == 100.0
-    assert p["freshness"] == "Live"
+    assert p["freshness"] == "Latest daily"
 
 @patch("app.services.external_market_service.requests.get")
 def test_external_market_service_caching(mock_get):

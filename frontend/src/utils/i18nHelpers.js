@@ -100,3 +100,11 @@ export const translateRisk = (riskStr, t) => {
 
     return riskStr;
 };
+
+export const translateRiskFlag = (flagStr, t) => {
+    if (!flagStr) return "";
+    const key = `advisor.risk_flags.${flagStr}`;
+    const trans = t(key);
+    if (trans !== key) return trans;
+    return flagStr;
+};

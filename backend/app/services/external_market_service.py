@@ -84,7 +84,7 @@ class ExternalMarketService:
                         "source_name": "data.gov.in (AGMARKNET)",
                         "fetched_at": current_time,
                         "data_timestamp": str(r.get("arrival_date", "")).strip(),
-                        "freshness": "Live"
+                        "freshness": "Latest daily"
                     })
                 except (ValueError, TypeError) as e:
                     logger.warning(f"Failed to parse external record: {r} Error: {e}")

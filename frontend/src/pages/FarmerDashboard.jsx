@@ -12,11 +12,11 @@ import {
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { translateCrop, translateRole, translateMarket, translateUnit, translateStatus, translateAdvisorWindow, translateRisk } from '../utils/i18nHelpers';
+import { translateCrop, translateRole, translateMarket, translateUnit, translateStatus, translateAdvisorWindow, translateRisk, translateRiskFlag } from '../utils/i18nHelpers';
 import TransactionDetailModal from '../components/TransactionDetailModal';
 
 
-const translateDynamicReason = (reason, t) => {
+const translateDynamicReason = (reason, decision, t) => {
   if (reason.includes('No active markets found')) return t('advisor.reasons.no_active_markets');
   if (reason.includes('Not enough reliable data to form a recommendation')) return t('advisor.reasons.insufficient_data');
   if (reason.includes('Not enough reliable data to recommend waiting')) return t('advisor.reasons.low_confidence');
@@ -47,6 +47,15 @@ const translateDynamicReason = (reason, t) => {
   if (reason.includes('Grade A quality grade qualifies')) return t('advisor.reasons.grade_a_premium');
   if (reason.includes('Arrival quantity (supply volume) is currently unavailable')) return t('advisor.reasons.arrival_unavailable_warn');
   if (reason.includes('High weather risk may impact')) return t('advisor.reasons.weather_risk_impact');
+
+  if (reason.includes('potential upside is modest')) return t('advisor.reasons.partial_sell_modest_upside');
+
+  // Generic fallback based on decision state
+  if (decision === 'SELL_NOW') return t('advisor.reasons.generic_sell_now');
+  if (decision === 'PARTIAL_SELL') return t('advisor.reasons.generic_partial_sell');
+  if (decision === 'WAIT') return t('advisor.reasons.generic_wait');
+  if (decision === 'LOW_CONFIDENCE') return t('advisor.reasons.generic_low_confidence');
+  if (decision === 'INSUFFICIENT_DATA') return t('advisor.reasons.generic_insufficient_data');
 
   return reason;
 };
@@ -393,41 +402,96 @@ export default function FarmerDashboard() {
         </div>
       )}
 
-      {/* 3. SECTION 2 — AI SELL ADVISOR RESULT (Primary Visual Priority) */}
+      {/* 3. SECTION 2 — RECOMMENDED SELLING STRATEGY */}
       {advisorData && (
         <div className="bg-gradient-to-br from-teal-900 via-teal-800 to-stone-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-6 relative overflow-hidden">
 
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-teal-700/50 pb-4">
             <div className="flex items-center gap-2">
               <span className="text-xl">🌾</span>
-              <h2 className="text-xl font-bold tracking-tight text-white">{advisorData.decision === 'INSUFFICIENT_DATA' || advisorData.decision === 'LOW_CONFIDENCE' ? t('advisor.ai_market_assessment') : t('advisor.best_selling_opportunity')}</h2>
+              <h2 className="text-xl font-bold tracking-tight text-white">{t('advisor.recommended_selling_strategy')}</h2>
             </div>
             <span className="text-xs text-teal-200 bg-teal-700/80 px-3 py-1 rounded-full border border-teal-500/50 font-medium">
-              {advisorData.data_disclaimer}
+              {t('advisor.data_disclaimer')}
             </span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-            {/* Top Market Name & Price */}
-            <div className="space-y-3 lg:border-r lg:border-teal-700/80 pr-4">
-              <div className="text-xs font-bold uppercase tracking-wider text-teal-300">{t('advisor.recommended_market')}</div>
-              <div className="text-3xl font-extrabold text-white">{advisorData.recommended_market}</div>
-              <div className="text-xs text-teal-200 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-teal-400" />
-                <span>{advisorData.district}, {advisorData.state}</span>
+            {/* Strategy Priority Box */}
+            <div className="space-y-4 lg:border-r lg:border-teal-700/80 pr-4">
+              <div>
+                <span className="text-[11px] font-semibold text-teal-300 uppercase block mb-1">{t('advisor.decisions.sell_action')}</span>
+                <div className="flex items-center gap-2">
+                  {advisorData.decision === "SELL_NOW" && <span className="w-3 h-3 rounded-full bg-emerald-500"></span>}
+                  {advisorData.decision === "PARTIAL_SELL" && <span className="w-3 h-3 rounded-full bg-yellow-500"></span>}
+                  {advisorData.decision === "WAIT" && <span className="w-3 h-3 rounded-full bg-blue-500"></span>}
+                  {(advisorData.decision === "LOW_CONFIDENCE" || advisorData.decision === "INSUFFICIENT_DATA") && <span className="w-3 h-3 rounded-full bg-stone-500"></span>}
+                  <span className="font-extrabold text-amber-300 text-2xl">
+                    {t(`advisor.decisions.${advisorData.decision.toLowerCase()}`) || advisorData.decision_label}
+                  </span>
+                </div>
+              </div>
+
+              {/* Recommended Mandi Block */}
+              <div className="pt-2 pb-1">
+                <span className="text-[11px] font-semibold text-teal-300 uppercase block mb-1">{t('advisor.recommended_mandi')}</span>
+                {advisorData.recommended_market ? (
+                  <>
+                    <div className="text-xl font-bold text-white">{advisorData.recommended_market}</div>
+                    <div className="text-xs text-teal-200 flex items-center gap-1 mt-0.5">
+                      <MapPin className="w-3.5 h-3.5 text-teal-400" />
+                      <span>{advisorData.district}, {advisorData.state}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm font-bold text-teal-200 mt-1">{t('advisor.data_unavailable')}</div>
+                )}
+              </div>
+
+              {/* Quantities */}
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="bg-teal-950/40 p-3 rounded-xl border border-teal-700/30">
+                  <span className="text-[10px] text-teal-400 uppercase font-semibold">{t('advisor.sell')}</span>
+                  {advisorData.recommended_sell_quantity != null ? (
+                    <div className="text-lg font-bold text-white">{advisorData.recommended_sell_quantity} {t("units.kg")}</div>
+                  ) : (
+                    <div className="text-sm font-bold text-teal-200 mt-0.5">{t('advisor.data_unavailable')}</div>
+                  )}
+                </div>
+                <div className="bg-teal-950/40 p-3 rounded-xl border border-teal-700/30">
+                  <span className="text-[10px] text-teal-400 uppercase font-semibold">{t('advisor.hold')}</span>
+                  {advisorData.recommended_hold_quantity != null ? (
+                    <div className="text-lg font-bold text-white">{advisorData.recommended_hold_quantity} {t("units.kg")}</div>
+                  ) : (
+                    <div className="text-sm font-bold text-teal-200 mt-0.5">{t('advisor.data_unavailable')}</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Horizon & Confidence */}
+              <div className="flex flex-wrap gap-2 pt-2">
+                {advisorData.decision_horizon && (
+                  <span className="px-2.5 py-1 bg-teal-800/50 text-teal-100 rounded text-[11px] font-medium border border-teal-700">
+                    {t('advisor.decision_horizon')}: {advisorData.decision_horizon}
+                  </span>
+                )}
+                {advisorData.confidence_score != null && (
+                  <span className="px-2.5 py-1 bg-teal-800/50 text-teal-100 rounded text-[11px] font-medium border border-teal-700">
+                    {t('advisor.confidence')}: {Math.round(advisorData.confidence_score)}%
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Key Metrics Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:col-span-2">
-
               <div className="bg-teal-950/60 p-4 rounded-2xl border border-teal-700/40">
                 <span className="text-[11px] font-semibold text-teal-300 uppercase block">{t('advisor.expected_price')}</span>
                 {advisorData.expected_price != null ? (
                   <div className="text-2xl font-bold text-white mt-1">₹{advisorData.expected_price.toLocaleString('en-IN')}</div>
                 ) : (
-                  <div className="text-2xl font-bold text-white mt-1 text-sm">{t('advisor.forecast_unavailable')}</div>
+                  <div className="text-xl font-bold text-teal-200 mt-1">{t('advisor.forecast_unavailable')}</div>
                 )}
                 <span className="text-[10px] text-teal-400 font-medium">{t('dashboard.per_qtl')}</span>
               </div>
@@ -437,93 +501,71 @@ export default function FarmerDashboard() {
                 {advisorData.current_modal_price != null ? (
                   <div className="text-xl font-bold text-teal-100 mt-1">₹{advisorData.current_modal_price.toLocaleString('en-IN')}</div>
                 ) : (
-                  <div className="text-xl font-bold text-teal-100 mt-1">{t('advisor.price_unavailable')}</div>
+                  <div className="text-xl font-bold text-teal-200 mt-1">{t('advisor.price_unavailable')}</div>
                 )}
-                {advisorData.expected_gain != null ? (
-                  <span className="text-sm font-semibold text-teal-200 block">
-                    {advisorData.expected_gain >= 0 ? `+₹${advisorData.expected_gain} ${t('advisor.expected_gain')}` : `₹${advisorData.expected_gain} ${t('advisor.expected_gain')}`}
+                {advisorData.expected_upside_pct != null && (
+                  <span className={`text-sm font-semibold block mt-1 ${advisorData.expected_upside_pct > 0 ? 'text-agrigreen-300' : 'text-amber-300'}`}>
+                    {advisorData.expected_upside_pct > 0 ? '+' : ''}{advisorData.expected_upside_pct.toFixed(1)}% {t('advisor.expected_upside')}
                   </span>
-                ) : null}
+                )}
               </div>
 
               <div className="bg-teal-950/60 p-4 rounded-2xl border border-teal-700/40">
-                <span className="text-[11px] font-semibold text-teal-300 uppercase block">{t('advisor.downside_risk')}</span>
-                <div className="text-base font-bold text-amber-300 mt-1">{advisorData.risk_level === 'UNKNOWN' ? t('advisor.insufficient_data') : (translateRisk(advisorData.risk_level, t) || t('advisor.risk_unavailable'))}</div>
-                <span className="text-[10px] text-stone-300">{t('advisor.confidence')}: {advisorData.confidence_score != null ? `${Math.round(advisorData.confidence_score)}%` : t('advisor.confidence_unavailable')}</span>
+                <span className="text-[11px] font-semibold text-teal-300 uppercase block">{t('advisor.market_pressure')}</span>
+                <div className="text-sm font-bold text-amber-300 mt-1 mb-1">
+                  {advisorData.supply_pressure_status === 'UNAVAILABLE'
+                    ? t('advisor.data_unavailable')
+                    : translateRisk(advisorData.supply_pressure_status, t) || advisorData.supply_pressure_status}
+                </div>
+                {advisorData.arrival_quantity != null ? (
+                  <span className="text-[10px] text-stone-300 block">{t('advisor.arrivals')}: {advisorData.arrival_quantity} {t('dashboard.tons')}</span>
+                ) : (
+                  <span className="text-[10px] text-stone-300 block">{t('advisor.arrivals')}: {t('advisor.data_unavailable')}</span>
+                )}
+              </div>
+
+              {/* Risk Flags Row */}
+              <div className="col-span-2 sm:col-span-3">
+                 <div className="flex flex-wrap gap-2">
+                    {advisorData.risk_flags && advisorData.risk_flags.length > 0 ? (
+                      advisorData.risk_flags.map((flag, idx) => (
+                        <span key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 text-red-200 rounded-lg text-[11px] font-medium border border-red-700/50">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          {translateRiskFlag(flag, t)}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="px-3 py-1.5 bg-teal-900/30 text-teal-200 rounded-lg text-[11px] font-medium border border-teal-700/30">
+                        {advisorData.decision === 'INSUFFICIENT_DATA' ? t('advisor.insufficient_data') : t('advisor.risk_unavailable')}
+                      </span>
+                    )}
+                 </div>
               </div>
 
             </div>
-
           </div>
 
-          {/* AI Recommendation Reason */}
-          {advisorData.decision && (
-            <div className="bg-teal-950/70 p-5 rounded-2xl border border-teal-700/40 text-teal-100 leading-relaxed space-y-4">
-
-              <div>
-                <span className="text-[11px] font-semibold text-teal-300 uppercase block mb-1">{t('advisor.decisions.sell_action')}</span>
-                <div className="flex items-center gap-2">
-                  {advisorData.decision === "SELL_NOW" && <span className="w-3 h-3 rounded-full bg-emerald-500"></span>}
-                  {advisorData.decision === "PARTIAL_SELL" && <span className="w-3 h-3 rounded-full bg-yellow-500"></span>}
-                  {advisorData.decision === "WAIT" && <span className="w-3 h-3 rounded-full bg-blue-500"></span>}
-                  {(advisorData.decision === "LOW_CONFIDENCE" || advisorData.decision === "INSUFFICIENT_DATA") && <span className="w-3 h-3 rounded-full bg-stone-500"></span>}
-
-                  <span className="font-extrabold text-amber-300 text-xl">
-                    {t(`advisor.decisions.${advisorData.decision.toLowerCase()}`) || advisorData.decision_label}
-                  </span>
-                </div>
-
-                {advisorData.decision === "PARTIAL_SELL" && advisorData.recommended_sell_quantity && (
-                   <div className="mt-2 text-sm text-yellow-200 bg-yellow-900/30 p-2 rounded-lg inline-block border border-yellow-700/50">
-                      {t('dashboard.quantity')}: Sell {advisorData.recommended_sell_quantity} {t("units.qtl")}, Hold {advisorData.recommended_hold_quantity} {t("units.qtl")}
-                   </div>
-                )}
-              </div>
-
-              <div>
-                <span className="text-[11px] font-semibold text-teal-300 uppercase block mb-1">{t('advisor.recommendation_reason')}</span>
-                <p className="text-sm">
-                  {advisorData.decision_reason}
-                </p>
-                {advisorData.market_systemic_risk === "HIGH" && (
-                  <p className="text-sm text-red-300 mt-1">{t('advisor.systemic_market_risk')}: HIGH</p>
-                )}
-              </div>
-
+          {/* Supporting Factors */}
+          <div className="bg-teal-950/70 p-5 rounded-2xl border border-teal-700/40 text-teal-100 leading-relaxed">
+            <span className="text-[11px] font-semibold text-teal-300 uppercase block mb-2">{t('advisor.why_this_recommendation')}</span>
+            <p className="text-sm mb-3">
+              {translateDynamicReason(advisorData.decision_reason, advisorData.decision, t)}
+            </p>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
+                <span>{t('advisor.downside_risk')}: {advisorData.downside_risk ? translateRisk(advisorData.downside_risk, t) : t('advisor.data_unavailable')}</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
+                <span>{t('advisor.price_volatility')}: {advisorData.volatility ? translateRisk(advisorData.volatility, t) : t('advisor.data_unavailable')}</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
+                <span>{t('advisor.storage_available')}: {advisorData.storage_feasible != null ? (advisorData.storage_feasible ? t('common.yes') : t('common.no')) : t('advisor.data_unavailable')}</span>
+              </span>
             </div>
-          )}
-
-          {/* Phase 4: Weather Risk UI */}
-          {advisorData.weather_data_available && (
-            <div className="bg-teal-950/40 p-4 rounded-2xl border border-teal-700/30 text-xs text-teal-100 mt-4 flex items-start gap-3">
-              <CloudRain className={`w-5 h-5 shrink-0 mt-0.5 ${advisorData.weather_risk_level === 'HIGH' ? 'text-red-400' : advisorData.weather_risk_level === 'MEDIUM' ? 'text-yellow-400' : 'text-blue-400'}`} />
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-teal-200">
-                    {t('advisor.weather_risk')}: {t(`advisor.weather_risk_level_${advisorData.weather_risk_level}`) || advisorData.weather_risk_level}
-                  </span>
-                  <span className="text-[10px] text-teal-500 font-medium">Source: {advisorData.weather_source}</span>
-                </div>
-                {advisorData.weather_condition && (
-                  <p className="text-sm text-teal-300">
-                    {t('advisor.weather_condition')}: {advisorData.weather_condition}
-                  </p>
-                )}
-                {advisorData.weather_warning && (
-                  <p className="text-sm text-red-300 mt-1">
-                    {advisorData.weather_warning}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {!advisorData.weather_data_available && (
-            <div className="bg-teal-950/20 p-3 rounded-2xl border border-teal-700/20 text-[11px] text-teal-500 mt-4 flex items-center gap-2">
-              <CloudRain className="w-3.5 h-3.5 opacity-50" />
-              <span>{t('advisor.weather_unavailable')}</span>
-            </div>
-          )}
+          </div>
 
         </div>
       )}

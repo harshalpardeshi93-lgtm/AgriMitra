@@ -1,80 +1,15 @@
-import math
 from typing import Dict, List, Any
 from app.ml.trend_analyzer import analyze_price_trend
 from app.ml.price_forecaster import forecast_prices
-
-def calculate_volatility(history: List[dict]) -> dict:
-    if len(history) < 3:
-        return {"price_volatility": None, "volatility_level": "UNKNOWN"}
-
-    returns = []
-    for i in range(1, len(history)):
-        prev = float(history[i-1].get("modal_price", 0))
-        curr = float(history[i].get("modal_price", 0))
-        if prev > 0:
-            returns.append((curr - prev) / prev)
-
-    if not returns:
-        return {"price_volatility": None, "volatility_level": "UNKNOWN"}
-
-    mean_return = sum(returns) / len(returns)
-    variance = sum((r - mean_return) ** 2 for r in returns) / len(returns)
-    std_dev = math.sqrt(variance) * 100 # percentage
-
-    if std_dev < 2.0:
-        level = "LOW"
-    elif std_dev <= 5.0:
-        level = "MEDIUM"
-    else:
-        level = "HIGH"
-
-    return {
-        "price_volatility": round(std_dev, 2),
-        "volatility_level": level
-    }
-
-def calculate_downside_risk(history: List[dict], volatility: float, trend_dir: str) -> dict:
-    if not history or volatility is None:
-        return {"downside_risk_score": None, "risk_level": "UNKNOWN"}
-
-    current_price = float(history[-1].get("modal_price", 0))
-    min_price = min((float(p.get("modal_price", 0)) for p in history), default=current_price)
-
-    if current_price <= 0:
-        return {"downside_risk_score": None, "risk_level": "UNKNOWN"}
-
-    drawdown_potential = ((current_price - min_price) / current_price) * 100
-
-    # Simple heuristic risk score (0-100)
-    # Higher volatility + downward trend + high drawdown potential = higher risk
-    base_risk = volatility * 5.0
-    if trend_dir == "down":
-        base_risk += 20.0
-
-    base_risk += drawdown_potential
-
-    risk_score = min(100.0, max(0.0, base_risk))
-
-    if risk_score < 30:
-        level = "LOW"
-    elif risk_score < 60:
-        level = "MEDIUM"
-    else:
-        level = "HIGH"
-
-    return {
-        "downside_risk_score": round(risk_score, 1),
-        "risk_level": level
-    }
-
-def evaluate_market_systemic_risk() -> dict:
-    # Prototype currently does not have real multi-farmer decision tracking
-    # Return UNAVAILABLE as requested.
-    return {
-        "market_behavior_signal": "UNAVAILABLE",
-        "market_systemic_risk": "UNAVAILABLE",
-        "wait_concentration": None
-    }
+from app.ml.risk_signals import (
+    calculate_expected_gain,
+    extract_arrival_signal,
+    calculate_economic_signals,
+    calculate_volatility,
+    calculate_downside_risk,
+    evaluate_market_systemic_risk,
+    calculate_data_freshness
+)
 
 def generate_market_recommendation(
     crop_name: str,
@@ -118,12 +53,14 @@ def generate_market_recommendation(
         latest_entry = history[-1]
         latest_price = float(latest_entry.get("modal_price", 0))
 
-        raw_arr = latest_entry.get("arrival_quantity")
-        arrival_qty = float(raw_arr) if raw_arr is not None else None
+        arrival_signal = extract_arrival_signal(history)
+        arrival_qty = arrival_signal["arrival_quantity"]
+        arrival_trend_val = arrival_signal["arrival_trend"]
+        supply_pressure_val = arrival_signal["supply_pressure"]
 
         district = latest_entry.get("district", "")
         state = latest_entry.get("state", "")
-        freshness = latest_entry.get("freshness", "Fallback")
+        freshness = calculate_data_freshness(latest_entry)
         source_name = latest_entry.get("source_name", "AgriMitra Database")
 
         # 1. Trend Analysis
@@ -140,16 +77,17 @@ def generate_market_recommendation(
         confidence_label = forecast_res.get("confidence_label", "Confidence estimate")
 
         future_5d_price = forecast_points[-1]["predicted_modal_price"] if forecast_points else latest_price
-        expected_gain = round(future_5d_price - latest_price, 2)
+        expected_gain = calculate_expected_gain(latest_price, future_5d_price)
 
-        # Adjust expected gain based on costs
-        net_expected_gain = expected_gain
-        if storage_available and storage_cost is not None and storage_cost > 0:
-            net_expected_gain -= storage_cost
-        if transport_cost is not None and transport_cost > 0:
-            net_expected_gain -= transport_cost
+        eco_signals = calculate_economic_signals(
+            latest_price=latest_price,
+            expected_gain=expected_gain,
+            storage_available=storage_available,
+            storage_cost=storage_cost,
+            transport_cost=transport_cost
+        )
 
-        expected_gain_pct = round((net_expected_gain / latest_price) * 100, 2) if latest_price > 0 else 0
+        expected_gain_pct = eco_signals["expected_gain_pct"]
 
         # Multi-factor Composite Score (0 - 100)
         price_score = min(50.0, (latest_price / 100.0))
@@ -180,6 +118,13 @@ def generate_market_recommendation(
             "forecast_confidence": confidence_score,
             "confidence_label": confidence_label,
             "freshness": freshness,
+            "arrival_trend": arrival_trend_val,
+            "supply_pressure": supply_pressure_val,
+            "economic_uncertainty": eco_signals["economic_uncertainty"],
+            "upside_score": eco_signals["upside_score"],
+            "storage_score": eco_signals["storage_score"],
+            "transport_cost_status": eco_signals["transport_cost_status"],
+            "storage_cost_status": eco_signals["storage_cost_status"],
             "source_name": source_name,
             "history": history
         })
@@ -211,14 +156,22 @@ def generate_market_recommendation(
     top_confidence = top_market["forecast_confidence"]
     top_history = top_market["history"]
 
+    supply_pressure = top_market["supply_pressure"]
+    economic_uncertainty = top_market["economic_uncertainty"]
+    upside_score = top_market["upside_score"]
+    storage_score = top_market["storage_score"]
+    transport_cost_status = top_market["transport_cost_status"]
+    storage_cost_status = top_market["storage_cost_status"]
+    arrival_trend = top_market["arrival_trend"]
+
     # Calculate Risk factors
     vol_data = calculate_volatility(top_history)
     volatility = vol_data["price_volatility"]
     vol_level = vol_data["volatility_level"]
 
     risk_data = calculate_downside_risk(top_history, volatility, top_market["trend_direction"])
-    risk_score = risk_data["downside_risk_score"]
-    risk_level = risk_data["risk_level"]
+    risk_score = risk_data.get("risk_score")
+    risk_level = risk_data.get("risk_level")
 
     sys_risk_data = evaluate_market_systemic_risk()
 
@@ -240,8 +193,10 @@ def generate_market_recommendation(
     decision_reason = "Model estimates current price is attractive relative to risk."
     decision_label = "Sell now"
 
-    rec_sell_qty = None
-    rec_hold_qty = None
+    w_data = weather_data or {}
+
+    # We will compute quantities after the decision logic
+    # based on quantity_kg
 
     if top_obs < 3 or top_market["latest_modal_price"] <= 0:
         decision = "INSUFFICIENT_DATA"
@@ -274,19 +229,10 @@ def generate_market_recommendation(
             decision_label = "Sell part now"
             if risk_level == "HIGH" or vol_level == "HIGH":
                 decision_reason = "Model estimates potential upside exists, but recent volatility/downside risk makes waiting fully riskier. Selling part of the produce now can protect current value."
-                if quantity_kg and quantity_kg > 0:
-                    rec_sell_qty = round(quantity_kg * 0.7, 2)
-                    rec_hold_qty = round(quantity_kg * 0.3, 2)
             elif sys_risk_data["market_systemic_risk"] == "HIGH":
                 decision_reason = "Model estimates expected upside is meaningful, but market concentration is high. Sell partially to manage systemic risk."
-                if quantity_kg and quantity_kg > 0:
-                    rec_sell_qty = round(quantity_kg * 0.5, 2)
-                    rec_hold_qty = round(quantity_kg * 0.5, 2)
             else:
                 decision_reason = "Model estimates potential upside is modest. Selling part of the produce now can protect current value while retaining some upside."
-                if quantity_kg and quantity_kg > 0:
-                    rec_sell_qty = round(quantity_kg * 0.5, 2)
-                    rec_hold_qty = round(quantity_kg * 0.5, 2)
         elif top_gain_pct > 1.0 and not storage_available:
             decision = "SELL_NOW"
             decision_label = "Sell now"
@@ -302,13 +248,56 @@ def generate_market_recommendation(
             decision = "PARTIAL_SELL"
             decision_label = "Sell part now"
             decision_reason = "Model estimates potential upside is meaningful, but severe weather may increase transport uncertainty. Sell partially to manage weather risk."
-            if quantity_kg and quantity_kg > 0:
-                rec_sell_qty = round(quantity_kg * 0.5, 2)
-                rec_hold_qty = round(quantity_kg * 0.5, 2)
         elif decision == "PARTIAL_SELL":
             decision = "SELL_NOW"
             decision_label = "Sell now"
             decision_reason = "Model estimates recent volatility and high weather risk make waiting too risky. Secure value now before transport becomes difficult."
+
+    rec_sell_qty = None
+    rec_hold_qty = None
+    if quantity_kg is not None and quantity_kg > 0:
+        if decision in ["INSUFFICIENT_DATA", "LOW_CONFIDENCE"]:
+            rec_sell_qty = None
+            rec_hold_qty = None
+        elif decision == "SELL_NOW":
+            rec_sell_qty = float(quantity_kg)
+            rec_hold_qty = 0.0
+        elif decision == "WAIT":
+            rec_sell_qty = 0.0
+            rec_hold_qty = float(quantity_kg)
+        elif decision == "PARTIAL_SELL":
+            hold_ratio = 0.5
+            if top_gain_pct is not None and top_gain_pct > 1.0:
+                hold_ratio += min(0.2, (top_gain_pct - 1.0) * 0.05)
+            if top_confidence is not None:
+                if top_confidence >= 70:
+                    hold_ratio += 0.1
+                elif top_confidence < 40:
+                    hold_ratio -= 0.1
+            if storage_available:
+                hold_ratio += 0.1
+            else:
+                hold_ratio -= 0.3
+            if risk_level == "HIGH":
+                hold_ratio -= 0.2
+            elif risk_level == "MEDIUM":
+                hold_ratio -= 0.05
+            if vol_level == "HIGH":
+                hold_ratio -= 0.15
+            elif vol_level == "MEDIUM":
+                hold_ratio -= 0.05
+            if supply_pressure == "HIGH":
+                hold_ratio -= 0.15
+            elif supply_pressure == "MEDIUM":
+                hold_ratio -= 0.05
+            if sys_risk_data.get("market_systemic_risk") == "HIGH":
+                hold_ratio -= 0.15
+            if w_data.get("risk_level") == "HIGH":
+                hold_ratio -= 0.15
+
+            hold_ratio = max(0.1, min(0.9, hold_ratio))
+            rec_hold_qty = round(quantity_kg * hold_ratio, 2)
+            rec_sell_qty = round(quantity_kg - rec_hold_qty, 2)
 
     # Map decision to legacy recommended_window for backward compatibility
     if decision == "WAIT":
@@ -342,6 +331,29 @@ def generate_market_recommendation(
     # Safely extract weather fields
     w_data = weather_data or {}
 
+    risk_flags = []
+    if risk_level == "HIGH":
+        risk_flags.append("HIGH_DOWNSIDE_RISK")
+    if vol_level == "HIGH":
+        risk_flags.append("HIGH_VOLATILITY")
+    if supply_pressure == "HIGH":
+        risk_flags.append("HIGH_SUPPLY_PRESSURE")
+    if storage_available is False:
+        risk_flags.append("STORAGE_UNAVAILABLE")
+    if w_data.get("risk_level") == "HIGH":
+        risk_flags.append("HIGH_WEATHER_RISK")
+    if economic_uncertainty:
+        risk_flags.append("ECONOMIC_UNCERTAINTY")
+    if top_confidence is not None and top_confidence < 40:
+        risk_flags.append("LOW_CONFIDENCE")
+    if top_market["freshness"] == "Stale":
+        risk_flags.append("STALE_DATA")
+
+    supply_pressure_status = supply_pressure if arrival_avail else "UNAVAILABLE"
+
+    # decision horizon based on forecast points
+    decision_horizon = "5 days" if top_market.get("expected_5d_price") else None
+
     return {
         "recommended_market": top_market["market_name"],
         "district": top_market["district"],
@@ -366,7 +378,14 @@ def generate_market_recommendation(
         "downside_risk_score": risk_score,
         "risk_level": risk_level,
         "arrival_data_available": arrival_avail,
-        "arrival_signal": "UNAVAILABLE" if not arrival_avail else "STABLE",
+        "arrival_signal": top_market["arrival_trend"],
+        "arrival_trend": arrival_trend,
+        "supply_pressure": supply_pressure,
+        "economic_uncertainty": economic_uncertainty,
+        "upside_score": upside_score,
+        "storage_score": storage_score,
+        "transport_cost_status": transport_cost_status,
+        "storage_cost_status": storage_cost_status,
         "storage_available": storage_available,
         "storage_cost": storage_cost,
         "transport_cost": transport_cost,
@@ -374,6 +393,14 @@ def generate_market_recommendation(
         "recommended_hold_quantity": rec_hold_qty,
         "data_freshness": top_market["freshness"],
         "warnings": warnings,
+        "expected_upside_pct": top_market["expected_gain_pct"],
+        "downside_risk": risk_level,
+        "volatility": vol_level,
+        "supply_pressure_status": supply_pressure_status,
+        "arrival_quantity": top_market["arrival_quantity"] if arrival_avail else None,
+        "storage_feasible": storage_available if storage_available is not None else None,
+        "decision_horizon": decision_horizon,
+        "risk_flags": risk_flags,
 
         "market_behavior_signal": sys_risk_data["market_behavior_signal"],
         "market_systemic_risk": sys_risk_data["market_systemic_risk"],

@@ -242,7 +242,13 @@
       "mae_validation": "Chronological validation error MAE is ₹{{mae}}/qtl over {{obs}} historical observations.",
       "grade_a_premium": "Grade A quality grade qualifies for premium price realization at this market.",
       "arrival_unavailable_warn": "Arrival quantity (supply volume) is currently unavailable. Proceed with caution.",
-      "weather_risk_impact": "High weather risk may impact operations."
+      "weather_risk_impact": "High weather risk may impact operations.",
+      "partial_sell_modest_upside": "Potential upside is modest. Selling part of the produce now can protect current value while retaining some upside.",
+      "generic_sell_now": "Sell now to lock in current value.",
+      "generic_partial_sell": "Sell a portion now to manage risk while retaining some upside.",
+      "generic_wait": "Wait to capture potential upside.",
+      "generic_low_confidence": "Recommendation is uncertain due to low confidence.",
+      "generic_insufficient_data": "Cannot form a recommendation due to insufficient data."
     },
     "decisions": {
       "sell_now": "Sell Now",
@@ -276,7 +282,27 @@
       "limited_confidence": "Limited confidence"
     },
     "price_trend": "Price Trend",
-    "buyer_demand": "Buyer Demand"
+    "buyer_demand": "Buyer Demand",
+    "recommended_selling_strategy": "Recommended Selling Strategy",
+    "sell": "Sell:",
+    "hold": "Hold:",
+    "decision_horizon": "Decision horizon",
+    "expected_upside": "Expected upside",
+    "supply_pressure": "Supply pressure",
+    "arrivals": "Arrivals",
+    "data_unavailable": "Data unavailable",
+    "risk_flags": {
+      "HIGH_DOWNSIDE_RISK": "High downside risk",
+      "HIGH_VOLATILITY": "High price volatility",
+      "HIGH_SUPPLY_PRESSURE": "High supply pressure",
+      "STORAGE_UNAVAILABLE": "Storage unavailable",
+      "HIGH_WEATHER_RISK": "Weather risk",
+      "ECONOMIC_UNCERTAINTY": "Economic uncertainty",
+      "STALE_DATA": "Market data may be stale",
+      "LOW_CONFIDENCE": "Low confidence"
+    },
+    "data_disclaimer": "AI-assisted estimate based on prototype market data.",
+    "recommended_mandi": "Recommended Mandi"
   },
   "landing": {
     "hero_pill": "AI-powered market intelligence for better selling decisions",
@@ -294,7 +320,7 @@
     "how_it_works": "How AgriMitra Works",
     "how_it_works_desc": "From crop input to final transaction, AgriMitra simplifies agricultural commerce in four easy steps.",
     "step1_title": "Enter Your Crop",
-    "step1_desc": "Select your harvested crop, quantity in quintals, location, and quality grade (Grade A/B/C).",
+    "step1_desc": "Select your harvested crop, quantity in kg, location, and quality grade (Grade A/B/C).",
     "step1_tag": "Quick Form Input",
     "step2_title": "Compare Markets",
     "step2_desc": "Instantly view modal prices across nearby APMC Mandis along with estimated transport costs.",
@@ -309,8 +335,8 @@
     "hero_find_buyer": "Find the buyer.",
     "hero_sell_smarter": "Sell smarter.",
     "market_intel": "Market Intelligence",
-    "realtime_apmc": "Real-time APMC Mandi Data",
-    "realtime_apmc_desc": "AgriMitra connects directly to official APMC sources to give you the most accurate modal prices across nearby markets.",
+    "realtime_apmc": "Daily APMC Mandi Data",
+    "realtime_apmc_desc": "AgriMitra connects directly to official APMC daily data sources to give you accurate modal prices across nearby markets.",
     "ai_forecaster": "AI Price Forecaster",
     "ai_forecaster_desc": "Our machine learning models analyze historical trends and seasonal volatility to predict where prices are heading in the next 5 days.",
     "risk_advisor": "Risk-Aware Advisor",
@@ -337,7 +363,7 @@
     "hero_title_2": "Find the buyer.",
     "hero_title_3": "Sell smarter.",
     "market_intelligence_title": "Market Intelligence",
-    "market_intelligence_subtitle": "Real-Time APMC Price Discovery & Arrivals",
+    "market_intelligence_subtitle": "Daily APMC Price Intelligence",
     "market_intelligence_desc": "Understand modal prices, price trends, nearby mandis, and net profit expectations before transporting your crop.",
     "explore_all_markets": "Explore All Markets",
     "why_transparent_title": "Why Transparent Discovery?",
@@ -371,14 +397,20 @@
     "real_capabilities": "Real functional capabilities active inside this AgriMitra hackathon prototype.",
     "apmc_mandis": "APMC Mandis Tracked",
     "agricultural_crops": "Agricultural Crops",
-    "local_architecture": "Local-First Architecture"
+    "local_architecture": "Local-First Prototype",
+    "multiple": "Multiple",
+    "nearby_mandi_prices_title": "Nearby APMC Mandi Prices",
+    "desc": "Empowering Indian farmers & FPOs with transparent daily market price intelligence, direct buyer connections, and actionable agricultural intelligence.",
+    "prototype_disclaimer": "SIH Hackathon Prototype. Latest daily mandi data when available, with AI-assisted estimation."
   },
   "common": {
     "cancel": "Cancel",
     "submit": "Submit",
     "close": "Close",
     "loading_session": "Loading session...",
-    "location": "Location"
+    "location": "Location",
+    "yes": "Yes",
+    "no": "No"
   },
   "marketplace": {
     "make_offer": "Make Offer",
@@ -569,7 +601,21 @@
     "Accepted": "Accepted",
     "Rejected": "Rejected",
     "Cancelled": "Cancelled",
-    "offer_received": "Offer Received"
+    "offer_received": "Offer Received",
+    "accepted": "Accepted",
+    "pending": "Pending",
+    "rejected": "Rejected",
+    "processing": "Processing",
+    "paid": "Paid",
+    "confirmed": "Confirmed",
+    "in_progress": "In Progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "sell_now": "Sell Now",
+    "partial_sell": "Sell Part Now",
+    "wait": "Wait",
+    "low_confidence": "Low Confidence",
+    "insufficient_data": "Insufficient Data"
   },
   "farm3d": {
     "value_chain": "AgriMitra Value Chain",
