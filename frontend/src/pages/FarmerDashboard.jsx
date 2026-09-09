@@ -480,8 +480,8 @@ export default function FarmerDashboard() {
                 )}
                 {advisorData.confidence_score != null && (
                   <span className="px-2.5 py-1 bg-teal-800/50 text-teal-100 rounded text-[11px] font-medium border border-teal-700">
-                    Forecast Confidence: {Math.round(advisorData.confidence_score)}%
-                    {advisorData.confidence_level && ` (${advisorData.confidence_level})`}
+                    {t('advisor.forecast_confidence') || 'Forecast confidence'}: {Math.round(advisorData.confidence_score)}%
+                    {advisorData.confidence_level && ` · ${advisorData.confidence_level === 'Incomplete Data' ? (t('advisor.incomplete_data') || 'Incomplete data') : advisorData.confidence_level}`}
                   </span>
                 )}
               </div>

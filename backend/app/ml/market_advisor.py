@@ -189,7 +189,7 @@ def generate_market_recommendation(
     top_confidence_label = top_market["confidence_label"]
     if not arrival_avail or storage_available is None or risk_level == "UNKNOWN" or vol_level == "UNKNOWN":
         if top_confidence is not None and top_confidence >= 40.0:
-            top_confidence_label += " (Incomplete Data)"
+            top_confidence_label = "Incomplete Data"
 
     # DECISION ENGINE HIERARCHY (HERD-BEHAVIOR SAFE)
     decision = "SELL_NOW"

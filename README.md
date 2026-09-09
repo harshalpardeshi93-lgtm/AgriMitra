@@ -52,7 +52,7 @@ AgriMitra connects smallholders, aggregators, and institutional buyers through a
 ## Data & Prototype Disclaimer
 
 > ⚠️ **Data Integrity & Honesty Notice:**
-> AgriMitra operates on prototype APMC mandi data and AI-assisted estimates for demonstration purposes. All price recommendations are AI-assisted estimates based on prototype market data and should not be construed as official government statistical guarantees.
+> AgriMitra uses latest available daily government mandi price data where available, with AI-assisted estimates for forecasting and recommendations. The direct buyer marketplace and produce lots operate on prototype data for demonstration purposes. Recommendations are indicative and are not official price guarantees.
 
 ---
 
