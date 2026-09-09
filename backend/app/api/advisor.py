@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database.session import get_db
@@ -11,9 +12,9 @@ def read_advisor_recommendation(
     crop_id: int = Query(..., description="Crop ID to evaluate"),
     quantity_kg: float = Query(500.0, ge=1.0, description="Available harvest quantity in kg"),
     quality_grade: str = Query("Grade A", description="Quality grade of crop"),
-    storage_available: bool = Query(False, description="Whether farmer has storage available"),
-    storage_cost: float = Query(None, description="Cost of storage if available"),
-    transport_cost: float = Query(None, description="Cost of transport if available"),
+    storage_available: Optional[bool] = Query(None, description="Whether farmer has storage available"),
+    storage_cost: Optional[float] = Query(None, description="Cost of storage if available"),
+    transport_cost: Optional[float] = Query(None, description="Cost of transport if available"),
     db: Session = Depends(get_db)
 ):
     advisor_res = get_ai_advisor_recommendation(

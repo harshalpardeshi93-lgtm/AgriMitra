@@ -1,4 +1,4 @@
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from app.ml.trend_analyzer import analyze_price_trend
 from app.ml.price_forecaster import forecast_prices
 from app.ml.risk_signals import (
@@ -16,9 +16,9 @@ def generate_market_recommendation(
     quantity_kg: float,
     quality_grade: str,
     market_price_history_map: Dict[str, List[dict]],
-    storage_available: bool = False,
-    storage_cost: float = None,
-    transport_cost: float = None,
+    storage_available: Optional[bool] = None,
+    storage_cost: Optional[float] = None,
+    transport_cost: Optional[float] = None,
     weather_data: dict = None
 ) -> Dict[str, Any]:
     """
@@ -180,13 +180,16 @@ def generate_market_recommendation(
 
     if not arrival_avail:
         warnings.append("Arrival/supply data is currently unavailable.")
-        if top_confidence > 10.0:
-            top_confidence -= 10.0 # Reduce confidence when supply data is missing
 
-    if storage_available and storage_cost is None:
+    if storage_available is None:
+        warnings.append("Storage availability is unknown.")
+    elif storage_available and storage_cost is None:
         warnings.append("Storage is available but cost is unknown. Estimates may be optimistic.")
-        if top_confidence > 5.0:
-            top_confidence -= 5.0
+
+    top_confidence_label = top_market["confidence_label"]
+    if not arrival_avail or storage_available is None or risk_level == "UNKNOWN" or vol_level == "UNKNOWN":
+        if top_confidence is not None and top_confidence >= 40.0:
+            top_confidence_label += " (Incomplete Data)"
 
     # DECISION ENGINE HIERARCHY (HERD-BEHAVIOR SAFE)
     decision = "SELL_NOW"
@@ -204,7 +207,7 @@ def generate_market_recommendation(
         decision_reason = "Model estimates there is not enough reliable data to form a recommendation."
         # If there's insufficient data, confidence should also be unavaiable.
         top_confidence = None
-    elif top_confidence < 40.0 and risk_level != "HIGH" and vol_level != "HIGH":
+    elif top_confidence is not None and top_confidence < 40.0 and risk_level != "HIGH" and vol_level != "HIGH":
         decision = "LOW_CONFIDENCE"
         decision_label = "Low confidence"
         decision_reason = "Model estimates there is not enough reliable data to recommend waiting."
@@ -212,18 +215,21 @@ def generate_market_recommendation(
         # STRICT CONDITIONS FOR WAIT
         can_wait = (
             top_gain_pct > 2.0 and
-            top_confidence >= 40.0 and
-            risk_level != "HIGH" and
-            vol_level != "HIGH" and
-            storage_available == True and
+            (top_confidence is not None and top_confidence >= 40.0) and
+            risk_level in ("LOW", "MEDIUM") and
+            vol_level in ("LOW", "MEDIUM") and
             sys_risk_data["market_systemic_risk"] != "HIGH"
         )
 
-        if can_wait:
+        if can_wait and storage_available is True:
             decision = "WAIT"
             decision_label = "Wait"
             decision_reason = "Model estimates potential upside is meaningful, and current systemic/downside risk is relatively low. Storage is available."
-        elif top_gain_pct > 1.0 and storage_available:
+        elif can_wait and storage_available is None:
+            decision = "WAIT"
+            decision_label = "Wait (if storage available)"
+            decision_reason = "Model estimates potential upside is meaningful and risk is low. Consider waiting ONLY IF storage is available."
+        elif top_gain_pct > 1.0 and storage_available is True:
             # Downgrade to PARTIAL_SELL
             decision = "PARTIAL_SELL"
             decision_label = "Sell part now"
@@ -233,7 +239,11 @@ def generate_market_recommendation(
                 decision_reason = "Model estimates expected upside is meaningful, but market concentration is high. Sell partially to manage systemic risk."
             else:
                 decision_reason = "Model estimates potential upside is modest. Selling part of the produce now can protect current value while retaining some upside."
-        elif top_gain_pct > 1.0 and not storage_available:
+        elif top_gain_pct > 1.0 and storage_available is None:
+            decision = "PARTIAL_SELL"
+            decision_label = "Sell part now (if storage available)"
+            decision_reason = "Model estimates potential upside is modest. Consider a partial sell ONLY IF storage is available."
+        elif top_gain_pct > 1.0 and storage_available is False:
             decision = "SELL_NOW"
             decision_label = "Sell now"
             decision_reason = "Model estimates expected price has upside, but holding is not feasible without storage."
@@ -362,7 +372,7 @@ def generate_market_recommendation(
         "expected_price": top_market["expected_5d_price"],
         "expected_gain": top_market["expected_gain"],
         "recommended_window": recommended_window,
-        "confidence_level": top_market["confidence_label"],
+        "confidence_level": top_confidence_label,
         "confidence_score": top_confidence,
         "mae_validation_score": top_market["mae_score"],
         "observation_count": top_obs,

@@ -22,7 +22,7 @@ def test_positive_forecast_no_storage():
         {"date": "2026-09-04", "modal_price": 2150, "district": "D1", "state": "S1", "arrival_quantity": None}
     ]
     rec = generate_market_recommendation(
-        "Tomato", 500, "Grade A", 
+        "Tomato", 500, "Grade A",
         {"Mandi A": history},
         storage_available=False
     )
@@ -41,7 +41,7 @@ def test_positive_forecast_with_storage_wait():
         {"date": "2026-09-06", "modal_price": 2100, "district": "D1", "state": "S1", "arrival_quantity": None}
     ]
     rec = generate_market_recommendation(
-        "Tomato", 500, "Grade A", 
+        "Tomato", 500, "Grade A",
         {"Mandi A": history},
         storage_available=True
     )
@@ -58,13 +58,13 @@ def test_positive_forecast_high_volatility():
         {"date": "2026-09-06", "modal_price": 2100, "district": "D1", "state": "S1", "arrival_quantity": None}
     ]
     rec = generate_market_recommendation(
-        "Tomato", 500, "Grade A", 
+        "Tomato", 500, "Grade A",
         {"Mandi A": history},
         storage_available=True
     )
     assert rec["decision"] in ["PARTIAL_SELL", "SELL_NOW"]
     assert rec["volatility_level"] == "HIGH"
-    
+
 def test_missing_arrival_data():
     history = [
         {"date": "2026-09-01", "modal_price": 2000, "district": "D1", "state": "S1", "arrival_quantity": None},
@@ -88,7 +88,7 @@ def test_mentor_scenario_high_risk_missing_arrival():
     ]
     # Forecast might predict ~2520, which is > 2400.
     rec = generate_market_recommendation("Tomato", 500, "Grade A", {"Mandi A": history}, storage_available=True)
-    
+
     assert rec["decision"] != "WAIT", "Must not recommend WAIT when volatility and downside risk are high"
     assert rec["decision"] in ["PARTIAL_SELL", "SELL_NOW"]
     assert rec["arrival_data_available"] is False
@@ -105,8 +105,8 @@ def test_storage_cost_negates_gain():
     # Forecast should predict some minor gain.
     # High storage cost.
     rec = generate_market_recommendation(
-        "Tomato", 500, "Grade A", 
-        {"Mandi A": history}, 
+        "Tomato", 500, "Grade A",
+        {"Mandi A": history},
         storage_available=True,
         storage_cost=200.0
     )
@@ -114,3 +114,50 @@ def test_storage_cost_negates_gain():
     assert rec["decision"] == "SELL_NOW"
     assert "locks in current value" in rec["decision_reason"] or "potential upside is limited considering costs" in rec["decision_reason"].lower()
 
+def test_storage_semantics_strong_upside():
+    history = [
+        {"date": "2026-09-01", "modal_price": 2000, "district": "D1", "state": "S1", "arrival_quantity": None},
+        {"date": "2026-09-02", "modal_price": 2010, "district": "D1", "state": "S1", "arrival_quantity": None},
+        {"date": "2026-09-03", "modal_price": 2020, "district": "D1", "state": "S1", "arrival_quantity": None},
+        {"date": "2026-09-04", "modal_price": 2050, "district": "D1", "state": "S1", "arrival_quantity": None},
+        {"date": "2026-09-05", "modal_price": 2060, "district": "D1", "state": "S1", "arrival_quantity": None},
+        {"date": "2026-09-06", "modal_price": 2200, "district": "D1", "state": "S1", "arrival_quantity": None}
+    ]
+
+    rec_true = generate_market_recommendation("Tomato", 500, "Grade A", {"Mandi A": history}, storage_available=True)
+    assert rec_true["decision"] == "WAIT"
+
+    rec_false = generate_market_recommendation("Tomato", 500, "Grade A", {"Mandi A": history}, storage_available=False)
+    assert rec_false["decision"] == "SELL_NOW"
+
+    rec_none = generate_market_recommendation("Tomato", 500, "Grade A", {"Mandi A": history}, storage_available=None)
+    assert rec_none["decision"] == "WAIT"
+    assert "Consider waiting ONLY IF storage is available" in rec_none["decision_reason"]
+
+from unittest.mock import patch
+
+def test_storage_semantics_modest_upside():
+    history = [
+        {"date": "2026-09-01", "modal_price": 2000, "district": "D1", "state": "S1", "arrival_quantity": None},
+        {"date": "2026-09-02", "modal_price": 2000, "district": "D1", "state": "S1", "arrival_quantity": None},
+        {"date": "2026-09-03", "modal_price": 2000, "district": "D1", "state": "S1", "arrival_quantity": None}
+    ]
+
+    # Mock forecast to return exactly 2035 (1.75% gain over 2000)
+    with patch("app.ml.market_advisor.forecast_prices") as mock_forecast:
+        mock_forecast.return_value = {
+            "forecast_points": [{"predicted_modal_price": 2035.0}],
+            "confidence_score": 85.0,
+            "confidence_label": "High confidence",
+            "mae": 10.0
+        }
+
+        rec_true = generate_market_recommendation("Tomato", 500, "Grade A", {"Mandi A": history}, storage_available=True)
+        assert rec_true["decision"] == "PARTIAL_SELL"
+
+        rec_false = generate_market_recommendation("Tomato", 500, "Grade A", {"Mandi A": history}, storage_available=False)
+        assert rec_false["decision"] == "SELL_NOW"
+
+        rec_none = generate_market_recommendation("Tomato", 500, "Grade A", {"Mandi A": history}, storage_available=None)
+        assert rec_none["decision"] == "PARTIAL_SELL"
+        assert "Consider a partial sell ONLY IF storage is available" in rec_none["decision_reason"]

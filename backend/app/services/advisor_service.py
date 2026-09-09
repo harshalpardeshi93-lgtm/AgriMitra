@@ -13,7 +13,7 @@ def get_ai_advisor_recommendation(
     crop_id: int,
     quantity_kg: float = 500.0,
     quality_grade: str = "Grade A",
-    storage_available: bool = False,
+    storage_available: Optional[bool] = None,
     storage_cost: Optional[float] = None,
     transport_cost: Optional[float] = None
 ) -> Optional[AdvisorResponse]:

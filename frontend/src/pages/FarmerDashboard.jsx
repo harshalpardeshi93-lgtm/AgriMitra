@@ -49,6 +49,8 @@ const translateDynamicReason = (reason, decision, t) => {
   if (reason.includes('High weather risk may impact')) return t('advisor.reasons.weather_risk_impact');
 
   if (reason.includes('potential upside is modest')) return t('advisor.reasons.partial_sell_modest_upside');
+  if (reason.includes('Consider waiting ONLY IF storage is available')) return t('advisor.reasons.wait_conditional_storage');
+  if (reason.includes('Consider a partial sell ONLY IF storage is available')) return t('advisor.reasons.partial_sell_conditional_storage');
 
   // Generic fallback based on decision state
   if (decision === 'SELL_NOW') return t('advisor.reasons.generic_sell_now');
@@ -478,7 +480,8 @@ export default function FarmerDashboard() {
                 )}
                 {advisorData.confidence_score != null && (
                   <span className="px-2.5 py-1 bg-teal-800/50 text-teal-100 rounded text-[11px] font-medium border border-teal-700">
-                    {t('advisor.confidence')}: {Math.round(advisorData.confidence_score)}%
+                    Forecast Confidence: {Math.round(advisorData.confidence_score)}%
+                    {advisorData.confidence_level && ` (${advisorData.confidence_level})`}
                   </span>
                 )}
               </div>

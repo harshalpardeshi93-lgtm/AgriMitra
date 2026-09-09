@@ -53,7 +53,7 @@ class AdvisorResponse(BaseModel):
     storage_score: Optional[float] = None
     transport_cost_status: Optional[str] = None
     storage_cost_status: Optional[str] = None
-    storage_available: bool = False
+    storage_available: Optional[bool] = None
     storage_cost: Optional[float] = None
     transport_cost: Optional[float] = None
     recommended_sell_quantity: Optional[float] = None

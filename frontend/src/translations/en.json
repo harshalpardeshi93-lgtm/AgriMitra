@@ -244,6 +244,8 @@
       "arrival_unavailable_warn": "Arrival quantity (supply volume) is currently unavailable. Proceed with caution.",
       "weather_risk_impact": "High weather risk may impact operations.",
       "partial_sell_modest_upside": "Potential upside is modest. Selling part of the produce now can protect current value while retaining some upside.",
+      "wait_conditional_storage": "Potential upside is meaningful and risk is low. Consider waiting ONLY IF storage is available.",
+      "partial_sell_conditional_storage": "Potential upside is modest. Consider a partial sell ONLY IF storage is available.",
       "generic_sell_now": "Sell now to lock in current value.",
       "generic_partial_sell": "Sell a portion now to manage risk while retaining some upside.",
       "generic_wait": "Wait to capture potential upside.",
